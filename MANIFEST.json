@@ -68,8 +68,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 4540,
-      "sha256": "8405833a5c5eef59adfce81c03d9434e54fff25f2f2ddb33792f174e0402a15b"
+      "bytes": 4498,
+      "sha256": "b3b883e5100bb2f298437e9c302965e61202dddb9210a03a18c65df6611dfbfb"
     },
     {
       "path": "source/src/server/scripts/Custom/kyrian_hover.cpp",
