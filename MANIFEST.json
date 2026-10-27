@@ -12,6 +12,21 @@
       "sha256": "035d9bfd1ebeb738064cec266854a2d07f68a4d12340754004ec0651c396837b"
     },
     {
+      "path": "CREDITS.md",
+      "bytes": 787,
+      "sha256": "6a7fcf3387c9efe7c0d24164e3e9de83a7ca192ce092e267af48cb0de97a3b13"
+    },
+    {
+      "path": "PROVENANCE.md",
+      "bytes": 1291,
+      "sha256": "e0a29ee085b7fb07f3e54d9fed7ef5e0f7549be9ad640dd8c87bba48f2d7229e"
+    },
+    {
+      "path": "README.md",
+      "bytes": 4789,
+      "sha256": "b80482a2345f7408e6d754804d73c927cb7cf473e4940b16d3e03f0ce0ad18ec"
+    },
+    {
       "path": "integration/race-hooks.patch",
       "bytes": 3469,
       "sha256": "8941d6eaa7be760585520a0658945e3aa2f6097458a1e64c050c1673f24f5588"
@@ -60,16 +75,6 @@
       "path": "package.json",
       "bytes": 2629,
       "sha256": "3d0cf3a3a5b7be7f399e2b38ee0563bab06d63a27e44a42d4404bfb9a4efaa1b"
-    },
-    {
-      "path": "PROVENANCE.md",
-      "bytes": 1008,
-      "sha256": "e84af52c07288cf8e59d9c09b7abda88db8708d6f71e9dd17ee9873763d2155a"
-    },
-    {
-      "path": "README.md",
-      "bytes": 4498,
-      "sha256": "b3b883e5100bb2f298437e9c302965e61202dddb9210a03a18c65df6611dfbfb"
     },
     {
       "path": "source/src/server/scripts/Custom/kyrian_hover.cpp",
