@@ -1,0 +1,47 @@
+-- charsections: 80 inserts, 0 updates, 0 deletes
+
+-- New entries
+SET @CharSectionsID = (SELECT COALESCE(MAX(id), 0) FROM `dbc`.`charsections`);
+
+DELETE FROM `charsections` WHERE `id` BETWEEN 28100 AND 28182; -- Ogre default
+INSERT INTO `charsections` (`id`, `race`, `gender`, `base_section`, `texture_1`, `texture_2`, `texture_3`, `flags`, `type`, `color_index`) VALUES
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Male, @Skin, 'Character\\Ogre\\Male\\OgrePCSkinBeige.blp', '', '', 17, 0, 0),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Male, @Face, 'Character\\Ogre\\Male\\OgrePCSkinBeigeFaceLower.blp', 'Character\\Ogre\\Male\\OgrePCSkinBeigeFaceUpper.blp', '', 1, 0, 0),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Male, @Skin, 'Character\\Ogre\\Male\\OgrePCSkinYellow.blp', '', '', 17, 0, 1),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Male, @Face, 'Character\\Ogre\\Male\\OgrePCSkinYellowFaceLower.blp', 'Character\\Ogre\\Male\\OgrePCSkinYellowFaceUpper.blp', '', 1, 0, 1),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Male, @Skin, 'Character\\Ogre\\Male\\OgrePCSkinRed.blp', '', '', 17, 0, 2),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Male, @Face, 'Character\\Ogre\\Male\\OgrePCSkinRedFaceLower.blp', 'Character\\Ogre\\Male\\OgrePCSkinRedFaceUpper.blp', '', 1, 0, 2),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Male, @Skin, 'Character\\Ogre\\Male\\OgrePCSkinGray.blp', '', '', 17, 0, 3),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Male, @Face, 'Character\\Ogre\\Male\\OgrePCSkinGrayFaceLower.blp', 'Character\\Ogre\\Male\\OgrePCSkinGrayFaceUpper.blp', '', 1, 0, 3),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Male, @Skin, 'Character\\Ogre\\Male\\OgrePCSkinBlue.blp', '', '', 17, 0, 4),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Male, @Face, 'Character\\Ogre\\Male\\OgrePCSkinBlueFaceLower.blp', 'Character\\Ogre\\Male\\OgrePCSkinBlueFaceUpper.blp', '', 1, 0, 4),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Male, @Skin, 'Character\\Ogre\\Male\\OgrePCSkinBlack.blp', '', '', 17, 0, 5),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Male, @Face, 'Character\\Ogre\\Male\\OgrePCSkinBlackFaceLower.blp', 'Character\\Ogre\\Male\\OgrePCSkinBlackFaceUpper.blp', '', 1, 0, 5),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Male, @FacialHair, '', '', '', 17, 0, 0),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Male, @Hair, '', '', '', 17, 0, 0),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Male, @Underwear, '', '', '', 17, 0, 0),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Male, @Underwear, '', '', '', 17, 0, 1),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Male, @Underwear, '', '', '', 17, 0, 2),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Male, @Underwear, '', '', '', 17, 0, 3),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Male, @Underwear, '', '', '', 17, 0, 4),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Male, @Underwear, '', '', '', 17, 0, 5),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Female, @Skin, 'Character\\Ogre\\Male\\OgrePCSkinBeige.blp', '', '', 17, 0, 0),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Female, @Face, 'Character\\Ogre\\Male\\OgrePCSkinBeigeFaceLower.blp', 'Character\\Ogre\\Male\\OgrePCSkinBeigeFaceUpper.blp', '', 1, 0, 0),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Female, @Underwear, '', '', '', 17, 0, 0),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Female, @Skin, 'Character\\Ogre\\Male\\OgrePCSkinYellow.blp', '', '', 17, 0, 1),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Female, @Face, 'Character\\Ogre\\Male\\OgrePCSkinYellowFaceLower.blp', 'Character\\Ogre\\Male\\OgrePCSkinYellowFaceUpper.blp', '', 1, 0, 1),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Female, @Underwear, '', '', '', 17, 0, 1),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Female, @Skin, 'Character\\Ogre\\Male\\OgrePCSkinRed.blp', '', '', 17, 0, 2),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Female, @Face, 'Character\\Ogre\\Male\\OgrePCSkinRedFaceLower.blp', 'Character\\Ogre\\Male\\OgrePCSkinRedFaceUpper.blp', '', 1, 0, 2),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Female, @Underwear, '', '', '', 17, 0, 2),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Female, @Skin, 'Character\\Ogre\\Male\\OgrePCSkinGray.blp', '', '', 17, 0, 3),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Female, @Face, 'Character\\Ogre\\Male\\OgrePCSkinGrayFaceLower.blp', 'Character\\Ogre\\Male\\OgrePCSkinGrayFaceUpper.blp', '', 1, 0, 3),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Female, @Underwear, '', '', '', 17, 0, 3),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Female, @Skin, 'Character\\Ogre\\Male\\OgrePCSkinBlue.blp', '', '', 17, 0, 4),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Female, @Face, 'Character\\Ogre\\Male\\OgrePCSkinBlueFaceLower.blp', 'Character\\Ogre\\Male\\OgrePCSkinBlueFaceUpper.blp', '', 1, 0, 4),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Female, @Underwear, '', '', '', 17, 0, 4),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Female, @Skin, 'Character\\Ogre\\Male\\OgrePCSkinBlack.blp', '', '', 17, 0, 5),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Female, @Face, 'Character\\Ogre\\Male\\OgrePCSkinBlackFaceLower.blp', 'Character\\Ogre\\Male\\OgrePCSkinBlackFaceUpper.blp', '', 1, 0, 5),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Female, @Underwear, '', '', '', 17, 0, 5),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Female, @FacialHair, '', '', '', 17, 0, 0),
+(@CharSectionsID := @CharSectionsID +1, @Ogre, @Female, @Hair, '', '', '', 17, 0, 0);

@@ -1,0 +1,8 @@
+/bin
+/dbc_files
+/dbc_export
+
+*.config
+*.exe
+*.dbc
+config.json

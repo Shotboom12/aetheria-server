@@ -1,0 +1,18 @@
+{
+  "dbc": {
+    "user": "root",
+    "password": "rootpassword",
+    "host": "127.0.0.1",
+    "port": "3307",
+    "name": "dbc"
+  },
+  "paths": {
+    "base": "./originaldbc",
+    "export": "./export",
+    "meta": "./meta"
+  },
+  "options": {
+    "use_versioning": false,
+    "use_lowercase_tables": false
+  }
+}

@@ -1,0 +1,53 @@
+[worldserver]
+
+# Open World Party Scaling
+#
+# Module settings
+# OpenWorldPartyScaling.Enable controls whether the module is active:
+# 1 enables party scaling. 0 disables party scaling.
+#
+# OpenWorldPartyScaling.RequireSameMapAndZone controls which party members count:
+# 1 counts only online members sharing the same map and zone as the event actor.
+# 0 counts online members regardless of their location.
+#
+# One eligible party member causes no scaling. Party sizes 2, 3, 4, and 5 use their
+# matching settings. Raid groups are always excluded.
+#
+# Multiplier rules
+# All values use decimal notation, not percentage numbers.
+#
+# DamageMultiplier reduces damage dealt by party players, pets, and guardians to creatures.
+# For example, 0.50 means 50% of normal damage.
+#
+# HealingMultiplier reduces qualifying healing involving the party. If both the healer and
+# recipient qualify, the lower healing multiplier is used.
+#
+# IncomingDamageMultiplier increases damage creatures deal to party players, pets, and guardians.
+# For example, 1.50 means the party receives 150% of normal damage.
+#
+# Damage and healing multipliers: minimum 0.10, maximum 1.00.
+# Incoming damage multipliers: minimum 1.00, maximum 10.00.
+# Values outside these ranges are clamped to their nearest limit.
+
+OpenWorldPartyScaling.Enable = 1
+OpenWorldPartyScaling.RequireSameMapAndZone = 1
+
+# Party size 2
+OpenWorldPartyScaling.PartySize2.DamageMultiplier         = 0.90
+OpenWorldPartyScaling.PartySize2.HealingMultiplier        = 0.90
+OpenWorldPartyScaling.PartySize2.IncomingDamageMultiplier = 1.10
+
+# Party size 3
+OpenWorldPartyScaling.PartySize3.DamageMultiplier         = 0.80
+OpenWorldPartyScaling.PartySize3.HealingMultiplier        = 0.80
+OpenWorldPartyScaling.PartySize3.IncomingDamageMultiplier = 1.20
+
+# Party size 4
+OpenWorldPartyScaling.PartySize4.DamageMultiplier         = 0.70
+OpenWorldPartyScaling.PartySize4.HealingMultiplier        = 0.70
+OpenWorldPartyScaling.PartySize4.IncomingDamageMultiplier = 1.30
+
+# Party size 5
+OpenWorldPartyScaling.PartySize5.DamageMultiplier         = 0.60
+OpenWorldPartyScaling.PartySize5.HealingMultiplier        = 0.60
+OpenWorldPartyScaling.PartySize5.IncomingDamageMultiplier = 1.40

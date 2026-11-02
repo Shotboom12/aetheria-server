@@ -1,0 +1,5 @@
+{
+  "dbc": { "user": "YOUR_DB_USER", "password": "YOUR_DB_PASSWORD", "host": "127.0.0.1", "port": "3306", "name": "dbc" },
+  "paths": { "base": "./dbc_files", "export": "./dbc_export", "meta": "./meta" },
+  "options": { "use_versioning": false, "use_lowercase_tables": false }
+}
