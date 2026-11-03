@@ -1,5 +1,5 @@
 {
-  "packageVersion": "kyrian-venthyr-20261027-1",
+  "packageVersion": "kyrian-venthyr-20261102-1",
   "files": [
     {
       "path": ".gitignore",
@@ -8,8 +8,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "bytes": 469,
-      "sha256": "035d9bfd1ebeb738064cec266854a2d07f68a4d12340754004ec0651c396837b"
+      "bytes": 1868,
+      "sha256": "335ea13b89588a34b3559e1afb9261235352e11a171d6a35ea593126adccdf7d"
     },
     {
       "path": "CREDITS.md",
@@ -24,7 +24,7 @@
     {
       "path": "README.md",
       "bytes": 4824,
-      "sha256": "78a7cc2dbaee27df603517cbb8a84930873e5856918c52845575ee4b97ec6c6d"
+      "sha256": "083d5472f114b58ebb855ae365255bee1e34f3b5925ecabeb2c364fd4c3af3a1"
     },
     {
       "path": "integration/race-hooks.patch",
@@ -73,8 +73,8 @@
     },
     {
       "path": "package.json",
-      "bytes": 2629,
-      "sha256": "3d0cf3a3a5b7be7f399e2b38ee0563bab06d63a27e44a42d4404bfb9a4efaa1b"
+      "bytes": 2550,
+      "sha256": "2797d88f62222500ab17f86a90255701e47b21aaf6ea2567a2356bb7e00ee870"
     },
     {
       "path": "source/src/server/scripts/Custom/kyrian_hover.cpp",
