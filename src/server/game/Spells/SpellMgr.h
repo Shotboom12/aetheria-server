@@ -92,13 +92,15 @@ enum SpellFamilyFlag
     SPELLFAMILYFLAG_SHAMAN_TOTEM_EFFECTS    = 0x04000000,  // Seems to be linked to most totems and some totem effects
 };
 
-#define SPELL_LINKED_MAX_SPELLS  200000
+// Linked spell keys are spaced by this value. CoA spell IDs reach the millions,
+// so the stock 200000 stride can collide across linked spell types.
+#define SPELL_LINKED_MAX_SPELLS  100000000
 
 enum SpellLinkedType
 {
     SPELL_LINK_CAST     = 0,            // +: cast; -: remove
-    SPELL_LINK_HIT      = 1 * 200000,
-    SPELL_LINK_AURA     = 2 * 200000,   // +: aura; -: immune
+    SPELL_LINK_HIT      = 1 * SPELL_LINKED_MAX_SPELLS,
+    SPELL_LINK_AURA     = 2 * SPELL_LINKED_MAX_SPELLS,   // +: aura; -: immune
     SPELL_LINK_REMOVE   = 0,
 };
 

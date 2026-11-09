@@ -118,6 +118,17 @@ void PlayerbotHolder::AddPlayerBot(ObjectGuid playerGuid, uint32 masterAccountId
         allowed = false;
         out << "Failure: You are not allowed to control bot " << botName.c_str();
     }
+    // Aetheria: the Hero class is for real players only. A Hero is never run as a RANDOM bot (isRndbot: no master). A
+    // player may still add their own Hero alt as an alt bot (same account, guild or trusted account). Hero has no class
+    // AI of its own, so such an alt gets the generic AI: it follows and loots but does not cast the Hero's abilities.
+    // Random bots are also never created as Heroes (see RandomPlayerbotFactory).
+    if (allowed && isRndbot)
+        if (CharacterCacheEntry const* cached = sCharacterCache->GetCharacterCacheByGuid(playerGuid);
+            cached && cached->Class == CLASS_HERO)
+        {
+            allowed = false;
+            out << "Failure: Hero characters cannot be random bots";
+        }
     if (masterAccountId && masterPlayer)
     {
         PlayerbotMgr* mgr = GET_PLAYERBOT_MGR(masterPlayer);

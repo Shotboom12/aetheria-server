@@ -426,7 +426,10 @@ void WorldSession::HandleItemQuerySingleOpcode(WorldPacket& recvData)
         queryData << pProto->BuyPrice;
         queryData << pProto->SellPrice;
         queryData << pProto->InventoryType;
-        queryData << pProto->AllowableClass;
+        uint32 allowableClass = pProto->AllowableClass;
+        if (GetPlayer() && GetPlayer()->getClass() == CLASS_HERO)
+            allowableClass = CLASSMASK_ALL_PLAYABLE;
+        queryData << allowableClass;
         queryData << pProto->AllowableRace;
         queryData << pProto->ItemLevel;
         queryData << pProto->RequiredLevel;
@@ -908,7 +911,9 @@ void WorldSession::SendListInventory(ObjectGuid vendorGuid, uint32 vendorEntry)
         {
             if (ItemTemplate const* itemTemplate = sObjectMgr->GetItemTemplate(item->item))
             {
-                if (!(itemTemplate->AllowableClass & _player->getClassMask()) && itemTemplate->Bonding == BIND_WHEN_PICKED_UP && !_player->IsGameMaster())
+                if (_player->getClass() != CLASS_HERO
+                    && !(itemTemplate->AllowableClass & _player->getClassMask())
+                    && itemTemplate->Bonding == BIND_WHEN_PICKED_UP && !_player->IsGameMaster())
                 {
                     continue;
                 }

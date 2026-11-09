@@ -27,6 +27,7 @@
 #include "AuthDefines.h"
 #include "BodyShapeWire.h"
 #include "RetailLookWire.h"
+#include "StartZoneWire.h"
 #include "CircularBuffer.h"
 #include "Common.h"
 #include "DatabaseEnv.h"
@@ -394,6 +395,14 @@ protected:
     CharacterBodyShape::Values BodyShape{};
     bool HasRetailLook = false;
     CharacterRetailLook::Look RetailLook;
+    bool HasStartZone = false;
+    uint8 StartZone = CharacterStartZone::RaceDefault;
+    uint32 StartMapId = 0;
+    uint32 StartAreaId = 0;
+    float StartPositionX = 0.0f;
+    float StartPositionY = 0.0f;
+    float StartPositionZ = 0.0f;
+    float StartOrientation = 0.0f;
 
     /// Server side data
     uint8 CharCount = 0;
@@ -472,6 +481,8 @@ public:
     bool PlayerLogout() const { return m_playerLogout; }
     bool PlayerRecentlyLoggedOut() const { return m_playerRecentlyLogout; }
     bool PlayerLogoutWithSave() const { return m_playerLogout && m_playerSave; }
+    bool IsSwapLogin() const { return _swapLogin; }
+    uint32 GetSwapCooldownMs() const;
 
     void ReadAddonsInfo(ByteBuffer& data);
     void SendAddonsInfo();
@@ -715,6 +726,8 @@ public:                                                 // opcodes handlers
 
     void HandleCharEnumOpcode(WorldPacket& recvPacket);
     void HandleEsteriaFormLookOpcode(WorldPacket& recvData);
+    void HandleEsteriaSwapRequestOpcode(WorldPacket& recvData);
+    void HandleEsteriaSwapRosterRequestOpcode(WorldPacket& recvData);
     void HandleCharDeleteOpcode(WorldPacket& recvPacket);
     void HandleCharCreateOpcode(WorldPacket& recvPacket);
     void HandlePlayerLoginOpcode(WorldPacket& recvPacket);
@@ -1340,6 +1353,9 @@ private:
     bool m_playerLogout;                                // code processed in LogoutPlayer
     bool m_playerRecentlyLogout;
     bool m_playerSave;
+    Milliseconds _swapTime{};
+    ObjectGuid _swapTarget;
+    bool _swapLogin = false;
     LocaleConstant m_sessionDbcLocale;
     LocaleConstant m_sessionDbLocaleIndex;
     std::atomic<uint32> m_latency;

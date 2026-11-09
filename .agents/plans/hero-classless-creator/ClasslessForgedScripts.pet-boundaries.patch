@@ -1,0 +1,31 @@
+--- a/src/ClasslessForgedScripts.cpp
++++ b/src/ClasslessForgedScripts.cpp
+@@ -585,3 +585,5 @@
+     {
+-        if (!pet)
++        Unit* master = pet ? pet->GetOwner() : nullptr;
++        Player* player = master ? master->ToPlayer() : nullptr;
++        if (!sClasslessMgr->IsParticipant(player))
+             return;
+@@ -633,3 +635,6 @@
+     {
++        Unit* master = pet ? pet->GetOwner() : nullptr;
++        if (!sClasslessMgr->IsParticipant(master ? master->ToPlayer() : nullptr))
++            return;
+         uint32 const spit = TalentPetSpell(pet);
+@@ -651,3 +656,3 @@
+ {
+-    if (player)
++    if (sClasslessMgr->IsParticipant(player))
+         SyncTalentPetSpell(player->GetPet());
+@@ -682,3 +687,4 @@
+     {
+-        if (!pet)
++        Unit* master = pet ? pet->GetOwner() : nullptr;
++        if (!sClasslessMgr->IsParticipant(master ? master->ToPlayer() : nullptr))
+             return;
+@@ -756,3 +762,3 @@
+         Player* owner = ObjectAccessor::GetPlayer(*me, summon->GetSummonerGUID());
+-        if (!owner || !owner->IsInWorld() || !owner->IsAlive())
++        if (!sClasslessMgr->IsParticipant(owner) || !owner->IsInWorld() || !owner->IsAlive())
+             return;

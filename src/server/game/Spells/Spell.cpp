@@ -2860,6 +2860,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
             }
 
             int32 gain = caster->HealBySpell(healInfo, crit);
+            m_scriptHealingIncludingOverheal = healInfo.GetHeal();
             float threat = float(gain) * 0.5f;
             if (caster->IsClass(CLASS_PALADIN))
                 threat *= 0.5f;
@@ -2954,6 +2955,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
                 procVictim |= PROC_FLAG_TAKEN_DAMAGE;
 
                 caster->DealSpellDamage(&damageInfo, true, this);
+                m_scriptHealthLeechDamage = damageInfo.damage;
 
                 // do procs after damage, eg healing effects
                 // no need to check if target is alive, done in procdamageandspell
@@ -3083,6 +3085,9 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
 
         CallScriptAfterHitHandlers();
     }
+
+    sScriptMgr->OnSpellHitResult(this, spellHitTarget ? spellHitTarget : effectUnit, uint8(missInfo),
+        m_damage > 0 ? uint32(m_damage) : 0, m_healing > 0 ? uint32(m_healing) : 0, target->crit);
 }
 
 SpellMissInfo Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool scaleAura)
@@ -3615,7 +3620,8 @@ SpellCastResult Spell::prepare(SpellCastTargets const* targets, AuraEffect const
     }
 
     //Prevent casting at cast another spell (ServerSide check)
-    if (!HasTriggeredCastFlag(TRIGGERED_IGNORE_CAST_IN_PROGRESS) && unitCaster && unitCaster->IsNonMeleeSpellCast(false, true, true, m_spellInfo->Id == 75) && m_cast_count)
+    if (!HasTriggeredCastFlag(TRIGGERED_IGNORE_CAST_IN_PROGRESS) && unitCaster && !unitCaster->CanCastDuringChannel(m_spellInfo) &&
+        unitCaster->IsNonMeleeSpellCast(false, true, true, m_spellInfo->Id == 75) && m_cast_count)
     {
         SendCastResult(SPELL_FAILED_SPELL_IN_PROGRESS);
         finish(false);
@@ -3667,7 +3673,8 @@ SpellCastResult Spell::prepare(SpellCastTargets const* targets, AuraEffect const
 
     // don't allow channeled spells / spells with cast time to be casted while moving
     // (even if they are interrupted on moving, spells with almost immediate effect get to have their effect processed before movement interrupter kicks in)
-    if ((m_spellInfo->IsChanneled() || m_casttime) && unitCaster && unitCaster->IsPlayer() && unitCaster->isMoving() && m_spellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_MOVEMENT && !IsTriggered())
+    if ((m_spellInfo->IsChanneled() || m_casttime) && unitCaster && unitCaster->IsPlayer() && unitCaster->isMoving() && m_spellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_MOVEMENT && !IsTriggered() &&
+        !unitCaster->CanCastSpellWhileMoving(m_spellInfo))
     {
         // 1. Has casttime, 2. Or doesn't have flag to allow action during channel
         if (m_casttime || !m_spellInfo->IsActionAllowedChannel())
@@ -3763,8 +3770,8 @@ SpellCastResult Spell::prepare(SpellCastTargets const* targets, AuraEffect const
                 exceptSpellId = m_spellInfo->Id;
             }
 
-            unitCaster->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_CAST, exceptSpellId, m_spellInfo->Id == 75);
-            unitCaster->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_SPELL_ATTACK, exceptSpellId, m_spellInfo->Id == 75);
+            unitCaster->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_CAST, exceptSpellId, m_spellInfo->Id == 75, m_spellInfo);
+            unitCaster->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_SPELL_ATTACK, exceptSpellId, m_spellInfo->Id == 75, m_spellInfo);
         }
 
         if (unitCaster)
@@ -4066,10 +4073,16 @@ void Spell::_cast(bool skipCheck)
 
     PrepareScriptHitHandlers();
 
+    if (Unit* beforeEffectsCaster = m_caster->ToUnit())
+        sScriptMgr->OnSpellBeforeEffects(this, beforeEffectsCaster, m_spellInfo);
+
     HandleLaunchPhase();
 
     // we must send smsg_spell_go packet before m_castItem delete in TakeCastItem()...
     SendSpellGo();
+
+    if (m_spellInfo->MaxCharges && m_spellInfo->CategoryRecoveryTime && unitCaster && unitCaster->IsPlayer())
+        unitCaster->ToPlayer()->SendClearCooldown(m_spellInfo->Id, unitCaster);
 
     bool resetAttackTimers = unitCaster && IsAutoActionResetSpell() && !m_spellInfo->HasAttribute(SPELL_ATTR2_DO_NOT_RESET_COMBAT_TIMERS);
     if (resetAttackTimers)
@@ -4543,7 +4556,8 @@ void Spell::update(uint32 difftime)
     // check if the player caster has moved before the spell finished
     // xinef: added preparing state (real cast, skip channels as they have other flags for this)
     if ((unitCaster && unitCaster->IsPlayer() && m_timer != 0) &&
-            unitCaster->isMoving() && (m_spellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_MOVEMENT) && m_spellState == SPELL_STATE_PREPARING &&
+            unitCaster->isMoving() && !unitCaster->CanCastSpellWhileMoving(m_spellInfo) &&
+            (m_spellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_MOVEMENT) && m_spellState == SPELL_STATE_PREPARING &&
             (m_spellInfo->Effects[0].Effect != SPELL_EFFECT_STUCK || !unitCaster->HasUnitMovementFlag(MOVEMENTFLAG_FALLING_FAR)))
     {
         // don't cancel for melee, autorepeat, triggered and instant spells
@@ -6008,7 +6022,8 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* /*param1*/, uint32* /*para
 
     // cancel autorepeat spells if cast start when moving
     // (not wand currently autorepeat cast delayed to moving stop anyway in spell update code)
-    if (unitCaster && unitCaster->IsPlayer() && unitCaster->ToPlayer()->isMoving() && !IsTriggered())
+    if (unitCaster && unitCaster->IsPlayer() && unitCaster->ToPlayer()->isMoving() && !IsTriggered() &&
+        !unitCaster->CanCastSpellWhileMoving(m_spellInfo))
     {
         // skip stuck spell to allow use it in falling case and apply spell limitations at movement
         if ((!unitCaster->HasUnitMovementFlag(MOVEMENTFLAG_FALLING_FAR) || m_spellInfo->Effects[0].Effect != SPELL_EFFECT_STUCK) &&
@@ -6091,8 +6106,24 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* /*param1*/, uint32* /*para
         if (target != unitCaster)
         {
             // Must be behind the target
-            if (m_spellInfo->HasAttribute(SPELL_ATTR0_CU_REQ_CASTER_BEHIND_TARGET) && target->HasInArc(static_cast<float>(M_PI), unitCaster))
-                return SPELL_FAILED_NOT_BEHIND;
+            if (m_spellInfo->HasAttribute(SPELL_ATTR0_CU_REQ_CASTER_BEHIND_TARGET) &&
+                target->HasInArc(static_cast<float>(M_PI), unitCaster))
+            {
+                bool ignored = false;
+                if (m_spellInfo->SpellFamilyName >= 18 && m_spellInfo->SpellFamilyName <= 38)
+                    for (AuraEffect const* effect : unitCaster->GetAuraEffectsByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS))
+                        if (effect->GetSpellInfo()->SpellFamilyName == m_spellInfo->SpellFamilyName &&
+                            effect->GetMiscValue() == ASCENSION_IGNORE_BEHIND_REQUIREMENT &&
+                            effect->IsAffectedOnSpell(m_spellInfo) &&
+                            (effect->GetMiscValueB() == ASCENSION_POSITION_SCOPE_ALL ||
+                             (effect->GetMiscValueB() == ASCENSION_POSITION_SCOPE_MONSTERS && !target->IsPlayer())))
+                        {
+                            ignored = true;
+                            break;
+                        }
+                if (!ignored)
+                    return SPELL_FAILED_NOT_BEHIND;
+            }
 
             // Target must be facing you
             if (m_spellInfo->HasAttribute(SPELL_ATTR0_CU_REQ_TARGET_FACING_CASTER) && !target->HasInArc(static_cast<float>(M_PI), unitCaster))
@@ -8720,8 +8751,10 @@ void Spell::DoAllEffectOnLaunchTarget(TargetInfo& targetInfo, float* multiplier)
     if (caster)
     {
         float critChance = caster->SpellDoneCritChance(unit, m_spellInfo, m_spellSchoolMask, m_attackType, false);
+        sScriptMgr->OnSpellCritChance(this, unit, critChance);
         critChance = unit->SpellTakenCritChance(caster, m_spellInfo, m_spellSchoolMask, critChance, m_attackType, false);
         targetInfo.crit = roll_chance_f(std::max(0.0f, critChance));
+        sScriptMgr->OnSpellCalculatedTarget(this, unit, targetInfo);
     }
 }
 
@@ -8836,6 +8869,9 @@ void Spell::SetSpellValue(SpellValueMod mod, int32 value)
             break;
         case SPELLVALUE_MISCVALUE2:
             m_spellValue->MiscVal[2] = value;
+            break;
+        case SPELLVALUE_MELEE_ATTACK_TYPE:
+            SetScriptMeleeAttackType(value);
             break;
     }
 }

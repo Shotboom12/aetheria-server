@@ -256,7 +256,7 @@ enum Classes
     CLASS_SHAMAN        = 7, // TITLE Shaman
     CLASS_MAGE          = 8, // TITLE Mage
     CLASS_WARLOCK       = 9, // TITLE Warlock
-    //CLASS_UNK           = 10,
+    CLASS_HERO           = 10, // TITLE Hero
     CLASS_DRUID         = 11 // TITLE Druid
 };
 
@@ -267,7 +267,7 @@ enum Classes
     ((1<<(CLASS_WARRIOR-1))|(1<<(CLASS_PALADIN-1))|(1<<(CLASS_HUNTER-1))| \
     (1<<(CLASS_ROGUE-1))  |(1<<(CLASS_PRIEST-1)) |(1<<(CLASS_SHAMAN-1))| \
     (1<<(CLASS_MAGE-1))   |(1<<(CLASS_WARLOCK-1))|(1<<(CLASS_DRUID-1)) | \
-    (1<<(CLASS_DEATH_KNIGHT-1)))
+    (1<<(CLASS_DEATH_KNIGHT-1))|(1<<(CLASS_HERO-1)))
 
 // valid classes for creature_template.unit_class
 #define CLASSMASK_ALL_CREATURES ((1<<(CLASS_WARRIOR-1)) | (1<<(CLASS_PALADIN-1)) | (1<<(CLASS_ROGUE-1)) | (1<<(CLASS_MAGE-1)))
@@ -1052,7 +1052,28 @@ enum SpellEffects
     SPELL_EFFECT_TALENT_SPEC_SELECT                 = 162,
     SPELL_EFFECT_163                                = 163,
     SPELL_EFFECT_REMOVE_AURA                        = 164,
-    TOTAL_SPELL_EFFECTS                             = 165
+    SPELL_EFFECT_ASCENSION_FIRST                    = 165,
+    SPELL_EFFECT_ASCENSION_MODIFY_COOLDOWN          = 165,
+    SPELL_EFFECT_ASCENSION_RESTORE_BASE_MANA_PCT    = 166,
+    SPELL_EFFECT_ASCENSION_PLAY_SPELL_VISUAL_KIT    = 168,
+    SPELL_EFFECT_ASCENSION_SPREAD_AURA              = 169,
+    SPELL_EFFECT_ASCENSION_SPREAD_AURA_2            = 170,
+    SPELL_EFFECT_ASCENSION_MODIFY_AURA_CHARGES      = 171,
+    SPELL_EFFECT_ASCENSION_REFRESH_AURA             = 173,
+    SPELL_EFFECT_ASCENSION_MODIFY_AURA_STACKS       = 175,
+    SPELL_EFFECT_ASCENSION_MODIFY_AURA_STACKS_2     = 176,
+    SPELL_EFFECT_ASCENSION_MODIFY_AURA_DURATION     = 177,
+    SPELL_EFFECT_ASCENSION_TRIGGER_SPELL_DURATION   = 178,
+    SPELL_EFFECT_ASCENSION_RESTORE_BASE_HEALTH_PCT  = 181,
+    SPELL_EFFECT_ASCENSION_TRIGGER_SPELL_DELAYED    = 183,
+    SPELL_EFFECT_ASCENSION_TRIGGER_RANDOM_SPELL     = 184,
+    SPELL_EFFECT_ASCENSION_RESTORE_SPELL_CHARGES    = 187,
+    SPELL_EFFECT_ASCENSION_APPLY_AURA_TO_SUMMONS    = 190,
+    SPELL_EFFECT_ASCENSION_MODIFY_COOLDOWN_PCT      = 192,
+    SPELL_EFFECT_ASCENSION_RESET_COOLDOWN           = 195,
+    SPELL_EFFECT_ASCENSION_MODIFY_FAMILY_COOLDOWN   = 197,
+    SPELL_EFFECT_ASCENSION_LAST                     = 198,
+    TOTAL_SPELL_EFFECTS                             = 199
 };
 
 // EnumUtils: DESCRIBE THIS
@@ -1425,6 +1446,7 @@ enum AuraStateType
     //AURA_STATE_UNKNOWN21                  = 21,           //     | not used
     AURA_STATE_UNKNOWN22                    = 22,           // C  t| varius spells (63884, 50240)
     AURA_STATE_HEALTH_ABOVE_75_PERCENT      = 23,           // C   |
+    AURA_STATE_ASCENSION_POISONED           = 32,           // CoA poisoned state (Hero CoA kits only; bit 31)
 };
 
 #define PER_CASTER_AURA_STATE_MASK (\

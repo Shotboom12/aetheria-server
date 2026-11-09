@@ -1,0 +1,52 @@
+--- a/src/ClasslessForgedScripts.cpp
++++ b/src/ClasslessForgedScripts.cpp
+@@ -436,8 +436,8 @@
+     SpellCastResult CheckPools()
+     {
+         Player* caster = GetCaster() ? GetCaster()->ToPlayer() : nullptr;
+-        if (!caster)
+-            return SPELL_FAILED_BAD_TARGETS;
++        if (!sClasslessMgr->IsParticipant(caster))
++            return SPELL_CAST_OK;
+         // rage is stored ten to the displayed point; energy is not
+         if (caster->GetPower(POWER_RAGE) / 10 + caster->GetPower(POWER_ENERGY) < int32(QUICKENING_MIN_POINTS))
+             return SPELL_FAILED_NO_POWER;
+@@ -447,7 +447,7 @@
+     void SpendPools()
+     {
+         Player* caster = GetCaster() ? GetCaster()->ToPlayer() : nullptr;
+-        if (!caster)
++        if (!sClasslessMgr->IsParticipant(caster))
+             return;
+         int32 const rage = caster->GetPower(POWER_RAGE);      // stored units, ten a point
+         int32 const energy = caster->GetPower(POWER_ENERGY);
+@@ -460,7 +460,8 @@
+ 
+     void SetHaste(SpellEffIndex /*effIndex*/)
+     {
+-        SetEffectValue(_pct);
++        if (sClasslessMgr->IsParticipant(GetCaster() ? GetCaster()->ToPlayer() : nullptr))
++            SetEffectValue(_pct);
+     }
+ 
+     void Register() override
+@@ -487,7 +488,8 @@
+ 
+     void OpenWindow(AuraEffect const* /*effect*/, AuraEffectHandleModes /*mode*/)
+     {
+-        if (Player* owner = GetUnitOwner() ? GetUnitOwner()->ToPlayer() : nullptr)
++        if (Player* owner = GetUnitOwner() ? GetUnitOwner()->ToPlayer() : nullptr;
++            sClasslessMgr->IsParticipant(owner))
+         {
+             RepertoireWindow& window = _repertoireUsed[owner->GetGUID().GetCounter()];
+             window.auraSpellId = GetId();
+@@ -503,7 +505,8 @@
+ 
+     void CalcAmount(AuraEffect const* aurEff, int32& amount, bool& /*canBeRecalculated*/)
+     {
+-        amount = REPERTOIRE_PER_STACK * int32(aurEff->GetBase()->GetStackAmount());
++        if (sClasslessMgr->IsParticipant(GetUnitOwner() ? GetUnitOwner()->ToPlayer() : nullptr))
++            amount = REPERTOIRE_PER_STACK * int32(aurEff->GetBase()->GetStackAmount());
+     }
+ 
+     void Register() override

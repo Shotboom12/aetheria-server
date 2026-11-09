@@ -79,6 +79,7 @@
 #include "KyrianRacials.h"
 #include "SocialMgr.h"
 #include "Spell.h"
+#include "SpellChargeState.h"
 #include "SpellAuraDefines.h"
 #include "SpellAuraEffects.h"
 #include "SpellAuras.h"
@@ -100,10 +101,15 @@
 #include "WorldState.h"
 #include "WorldStateDefines.h"
 #include "WorldStatePackets.h"
+#include <algorithm>
 #include <cmath>
 #include <array>
+#include <chrono>
 #include <string_view>
+#include <set>
 #include <queue>
+#include <tuple>
+#include <unordered_map>
 
 /// @todo: this import is not necessary for compilation and marked as unused by the IDE
 //  however, for some reasons removing it would cause a damn linking issue
@@ -512,7 +518,14 @@ bool Player::Create(ObjectGuid::LowType guidlow, CharacterCreateInfo* createInfo
     for (uint8 i = 0; i < PLAYER_SLOTS_COUNT; i++)
         m_items[i] = nullptr;
 
-    Relocate(info->positionX, info->positionY, info->positionZ, info->orientation);
+    Relocate(createInfo->HasStartZone && createInfo->StartZone != CharacterStartZone::RaceDefault
+            ? createInfo->StartPositionX : info->positionX,
+        createInfo->HasStartZone && createInfo->StartZone != CharacterStartZone::RaceDefault
+            ? createInfo->StartPositionY : info->positionY,
+        createInfo->HasStartZone && createInfo->StartZone != CharacterStartZone::RaceDefault
+            ? createInfo->StartPositionZ : info->positionZ,
+        createInfo->HasStartZone && createInfo->StartZone != CharacterStartZone::RaceDefault
+            ? createInfo->StartOrientation : info->orientation);
 
     ChrClassesEntry const* cEntry = sChrClassesStore.LookupEntry(createInfo->Class);
     if (!cEntry)
@@ -522,7 +535,8 @@ bool Player::Create(ObjectGuid::LowType guidlow, CharacterCreateInfo* createInfo
         return false;
     }
 
-    SetMap(sMapMgr->CreateMap(info->mapId, this));
+    SetMap(sMapMgr->CreateMap(createInfo->HasStartZone && createInfo->StartZone != CharacterStartZone::RaceDefault
+        ? createInfo->StartMapId : info->mapId, this));
 
     uint8 powertype = cEntry->powerType;
 
@@ -1389,8 +1403,24 @@ bool Player::IsClass(Classes unitClass, ClassContext context) const
     Optional<bool> scriptResult = sScriptMgr->OnPlayerIsClass(this, unitClass, context);
     if (scriptResult != std::nullopt)
         return *scriptResult;
-    else
-        return (getClass() == unitClass);
+
+    // Hero can use class-restricted equipment slots and armor classes. Keep
+    // this scoped to equipment contexts so class-specific combat behavior
+    // continues to use the Hero's actual configured class hooks.
+    if (getClass() == CLASS_HERO)
+    {
+        switch (context)
+        {
+            case CLASS_CONTEXT_EQUIP_RELIC:
+            case CLASS_CONTEXT_EQUIP_SHIELDS:
+            case CLASS_CONTEXT_EQUIP_ARMOR_CLASS:
+                return true;
+            default:
+                break;
+        }
+    }
+
+    return getClass() == unitClass;
 }
 
 void Player::ToggleAFK()
@@ -2922,6 +2952,7 @@ void Player::SendInitialSpells()
     }
 
     SendDirectMessage(&data);
+    SendAllSpellChargeStates();
 }
 
 void Player::SendUnlearnSpells()
@@ -3463,6 +3494,16 @@ bool Player::IsNeedCastPassiveSpellAtLearn(SpellInfo const* spellInfo) const
 
 void Player::learnSpell(uint32 spellId, bool temporary /*= false*/, bool learnFromSkill /*= false*/)
 {
+    _learnSpell(spellId, temporary, learnFromSkill, true);
+}
+
+void Player::learnSpellWithoutAnnouncement(uint32 spellId, bool temporary /*= true*/)
+{
+    _learnSpell(spellId, temporary, false, false);
+}
+
+void Player::_learnSpell(uint32 spellId, bool temporary, bool learnFromSkill, bool announce)
+{
     if (!sScriptMgr->OnPlayerCanLearnSpell(this, spellId))
         return;
 
@@ -3475,13 +3516,16 @@ void Player::learnSpell(uint32 spellId, bool temporary /*= false*/, bool learnFr
 
     uint8 const specMask = GetLearnSpellSpecMask(spellId);
 
-    bool const added = addSpell(spellId, specMask, true, temporary, learnFromSkill);
+    // A silent learn must also stop Player::_addSpell from announcing a temporary spell, which it does
+    // unless the spell comes from a skill line; otherwise the client holds the spell twice.
+    bool const added = addSpell(spellId, specMask, true, temporary, learnFromSkill || !announce);
     if (added)
     {
         sScriptMgr->OnPlayerLearnSpell(this, spellId);
+        SendSpellChargeState(spellId);
 
         // pussywizard: a system message "you have learnt spell X (rank Y)"
-        if (IsInWorld())
+        if (announce && IsInWorld())
             SendLearnPacket(spellId, true);
     }
 
@@ -3756,6 +3800,16 @@ void Player::RemoveCategoryCooldown(uint32 cat)
 
 void Player::RemoveArenaSpellCooldowns(bool removeActivePetCooldowns)
 {
+    std::unordered_set<uint32> restoredChargePools;
+    for (auto const& [spellId, playerSpell] : m_spells)
+    {
+        SpellInfo const* info = sSpellMgr->GetSpellInfo(spellId);
+        if (playerSpell->State != PLAYERSPELL_REMOVED && info && info->MaxCharges &&
+            info->ChargeRecoveryTime < 10 * MINUTE * IN_MILLISECONDS &&
+            restoredChargePools.insert(info->ChargeRecoveryKey).second)
+            RestoreSpellCharge(spellId, info->MaxCharges);
+    }
+
     // remove cooldowns on spells that have < 10 min CD
     uint32 infTime = GameTime::GetGameTimeMS().count() + infinityCooldownDelayCheck;
     SpellCooldowns::iterator itr, next;
@@ -3791,6 +3845,8 @@ void Player::RemoveArenaSpellCooldowns(bool removeActivePetCooldowns)
 
 void Player::RemoveAllSpellCooldown()
 {
+    RestoreAllSpellCharges();
+
     uint32 infTime = GameTime::GetGameTimeMS().count() + infinityCooldownDelayCheck;
     if (!m_spellCooldowns.empty())
     {
@@ -4108,10 +4164,119 @@ bool Player::HasTalent(uint32 spell, uint8 spec) const
     return (itr != m_talents.end() && itr->second->State != PLAYERSPELL_REMOVED && itr->second->IsInSpec(spec));
 }
 
-bool Player::HasActiveSpell(uint32 spell) const
+void Player::SetTemporarySpellReplacement(uint32 original, uint32 replacement, bool redirect)
+{
+    auto itr = m_temporarySpellReplacements.find(original);
+    uint32 const previous = itr == m_temporarySpellReplacements.end() ? original : itr->second;
+    if (!replacement)
+    {
+        m_temporarySpellReplacements.erase(original);
+        m_temporarySpellReplacementKeepsCast.erase(original);
+        replacement = original;
+    }
+    else
+    {
+        if (!HasActiveSpell(original) || !HasActiveSpell(replacement))
+            return;
+        m_temporarySpellReplacements[original] = replacement;
+        m_temporarySpellReplacementOrigins[replacement] = original;
+        if (redirect)
+            m_temporarySpellReplacementKeepsCast.erase(original);
+        else
+            m_temporarySpellReplacementKeepsCast.insert(original);
+    }
+    if (previous != replacement && IsInWorld() && HasActiveSpell(original))
+    {
+        WorldPacket packet(SMSG_SUPERCEDED_SPELL, 8);
+        packet << previous << replacement;
+        GetSession()->SendPacket(&packet);
+    }
+}
+
+uint32 Player::GetSavedActionButtonSpell(uint32 action)
+{
+    // A temporary replacement is never saved, so the next login would drop a button holding it: save the spell it
+    // replaces, which the replacement takes over again once its owner re-applies it. A timed replacement may already
+    // be unlearned while a button still holds it, which the next login would drop just the same.
+    for (uint8 depth = 0; depth < 4; ++depth)
+    {
+        auto spell = m_spells.find(action);
+        auto origin = m_temporarySpellReplacementOrigins.find(action);
+        bool const unsaved = spell == m_spells.end() || spell->second->State == PLAYERSPELL_TEMPORARY ||
+            spell->second->State == PLAYERSPELL_REMOVED;
+        if (!unsaved || origin == m_temporarySpellReplacementOrigins.end() || !HasSpell(origin->second))
+            break;
+        action = origin->second;
+    }
+    sScriptMgr->OnPlayerNormalizeActionButtonSpell(this, action, false);
+    return action;
+}
+
+uint32 Player::GetTemporarySpellReplacement(uint32 original) const
+{
+    auto itr = m_temporarySpellReplacements.find(original);
+    return itr != m_temporarySpellReplacements.end() && HasActiveSpell(original) && HasActiveSpell(itr->second)
+        ? itr->second : original;
+}
+
+uint32 Player::GetCastReplacement(uint32 original) const
+{
+    return m_temporarySpellReplacementKeepsCast.count(original) ? original : GetTemporarySpellReplacement(original);
+}
+
+bool Player::IsTemporarySpellReplacementStandIn(uint32 spellId) const
+{
+    auto const origin = m_temporarySpellReplacementOrigins.find(spellId);
+    return origin != m_temporarySpellReplacementOrigins.end() && origin->second != spellId;
+}
+
+float Player::GetItemArmorBySubclass(uint32 subclass) const
+{
+    float armor = 0.0f;
+    for (uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
+        if (Item* item = GetItemByPos(INVENTORY_SLOT_BAG_0, slot))
+            if (ItemTemplate const* proto = item->GetTemplate();
+                proto->Class == ITEM_CLASS_ARMOR && proto->SubClass == subclass)
+                armor += float(proto->Armor);
+    return armor;
+}
+
+bool Player::HasStoredActiveSpell(uint32 spell) const
 {
     PlayerSpellMap::const_iterator itr = m_spells.find(spell);
     return (itr != m_spells.end() && itr->second->State != PLAYERSPELL_REMOVED && itr->second->Active && itr->second->IsInSpec(m_activeSpec));
+}
+
+bool Player::HasActiveSpell(uint32 spell) const
+{
+    if (HasStoredActiveSpell(spell))
+        return true;
+
+    // An override aura (SPELL_AURA_ASCENSION_OVERRIDE_SPELL) makes the spell it names count as owned while the
+    // spell it overrides is, up to the rank held
+    SpellInfo const* requested = sSpellMgr->GetSpellInfo(spell);
+    if (!requested || requested->IsPassive() || requested->SpellLevel > GetLevel())
+        return false;
+    for (AuraEffect const* effect : GetAuraEffectsByType(SPELL_AURA_ASCENSION_OVERRIDE_SPELL))
+    {
+        SpellEffectInfo const& data = effect->GetSpellInfo()->Effects[effect->GetEffIndex()];
+        if (data.MiscValue <= 0 || data.MiscValueB || data.DieSides || effect->GetAmount() <= 0)
+            continue;
+        SpellInfo const* original = sSpellMgr->GetSpellInfo(uint32(data.MiscValue));
+        SpellInfo const* replacement = sSpellMgr->GetSpellInfo(uint32(effect->GetAmount()));
+        if (!original || !replacement || replacement->GetFirstRankSpell() != requested->GetFirstRankSpell())
+            continue;
+        if (original != original->GetFirstRankSpell() || replacement != replacement->GetFirstRankSpell())
+        {
+            if (replacement->Id == spell && HasStoredActiveSpell(original->Id))
+                return true;
+            continue;
+        }
+        for (SpellInfo const* rank = original; rank; rank = rank->GetNextRankSpell())
+            if (HasStoredActiveSpell(rank->Id) && requested->GetRank() <= rank->GetRank())
+                return true;
+    }
+    return false;
 }
 
 /**
@@ -10155,6 +10320,28 @@ bool Player::IsAffectedBySpellmod(SpellInfo const* spellInfo, SpellModifier* mod
     return spellInfo->IsAffectedBySpellMod(mod);
 }
 
+// An aura coupling a cast time reduction with a gcd reduction (Backdraft) must not fire its gcd half when its cast
+// time half was not applied. An aura whose only modifier is the gcd reduction has no cast time half to wait for.
+static bool AuraAlsoModifiesCastingTime(Aura const* aura)
+{
+    if (!aura)
+        return false;
+
+    SpellInfo const* info = aura->GetSpellInfo();
+    if (!info)
+        return false;
+
+    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+    {
+        SpellEffectInfo const& effect = info->Effects[i];
+        if ((effect.ApplyAuraName == SPELL_AURA_ADD_FLAT_MODIFIER || effect.ApplyAuraName == SPELL_AURA_ADD_PCT_MODIFIER) &&
+            effect.MiscValue == SPELLMOD_CASTING_TIME)
+            return true;
+    }
+
+    return false;
+}
+
 template <class T>
 void Player::ApplySpellMod(uint32 spellId, SpellModOp op, T& basevalue, Spell* spell, bool temporaryPet)
 {
@@ -10171,11 +10358,13 @@ void Player::ApplySpellMod(uint32 spellId, SpellModOp op, T& basevalue, Spell* s
         if (temporaryPet && mod->ownerAura && mod->ownerAura->IsUsingCharges())
             return;
 
-        // skip if already instant or cost is free
+        // skip if already instant or cost is free; a flat cast time increase can still give an instant spell a cast
+        // time
         if (mod->op == SPELLMOD_CASTING_TIME || mod->op == SPELLMOD_COST)
         {
             float currentVal = ((float)basevalue + (float)totalflat) * totalmul;
-            if (currentVal <= 0.0f)
+            if (currentVal <= 0.0f &&
+                !(mod->op == SPELLMOD_CASTING_TIME && mod->type == SPELLMOD_FLAT && mod->value > 0))
                 return;
         }
 
@@ -10195,6 +10384,16 @@ void Player::ApplySpellMod(uint32 spellId, SpellModOp op, T& basevalue, Spell* s
         }
         else if (mod->type == SPELLMOD_PCT)
         {
+            // A positive percent critical strike chance modifier adds percentage points. Stock data never has one;
+            // the negative stock case (Surge of Light's -100) keeps the multiplier below.
+            if (mod->op == SPELLMOD_CRITICAL_CHANCE && mod->value > 0)
+            {
+                if (totalflat < 100)
+                    totalflat += mod->value;
+                ApplyModToSpell(mod, spell);
+                return;
+            }
+
             // skip percent mods for null basevalue (most important for spell mods with charges)
             if (basevalue == T(0) || totalmul == 0.0f)
                 return;
@@ -10206,7 +10405,8 @@ void Player::ApplySpellMod(uint32 spellId, SpellModOp op, T& basevalue, Spell* s
             else if (mod->op == SPELLMOD_CRITICAL_CHANCE && !HasSpellModApplied(mod, spell))
                 return;
             // xinef: special case for backdraft gcd reduce with backlast time reduction, dont affect gcd if cast time was not applied
-            else if (mod->op == SPELLMOD_GLOBAL_COOLDOWN && !HasSpellModApplied(mod, spell))
+            else if (mod->op == SPELLMOD_GLOBAL_COOLDOWN && !HasSpellModApplied(mod, spell) &&
+                AuraAlsoModifiesCastingTime(mod->ownerAura))
                 return;
 
             // xinef: those two mods should be multiplicative (Glyph of Renew)
@@ -10222,6 +10422,14 @@ void Player::ApplySpellMod(uint32 spellId, SpellModOp op, T& basevalue, Spell* s
     // Drop charges for triggering spells instead of triggered ones
     if (m_spellModTakingSpell)
         spell = m_spellModTakingSpell;
+
+    double scriptValue = static_cast<double>(basevalue);
+    bool handled = false;
+    sScriptMgr->OnPlayerApplySpellMod(this, spellInfo, uint8(op), spell, temporaryPet,
+        scriptValue, totalflat, totalmul, handled);
+    basevalue = static_cast<T>(scriptValue);
+    if (handled)
+        return;
 
     for (auto mod : m_spellMods[op])
     {
@@ -10241,14 +10449,143 @@ template AC_GAME_API void Player::ApplySpellMod(uint32 spellId, SpellModOp op, i
 template AC_GAME_API void Player::ApplySpellMod(uint32 spellId, SpellModOp op, uint32& basevalue, Spell* spell, bool temporaryPet);
 template AC_GAME_API void Player::ApplySpellMod(uint32 spellId, SpellModOp op, float& basevalue, Spell* spell, bool temporaryPet);
 
+uint32 Player::GetSpellModChassisFamily() const
+{
+    ChrClassesEntry const* classEntry = sChrClassesStore.LookupEntry(getClass());
+    return classEntry ? classEntry->spellfamily : 0;
+}
+
+void Player::SendSpellModifier(uint16 opcode, uint8 eff, uint8 op, int32 value, uint32 spellFamily) const
+{
+    // The client tables are indexed by op 0..30 only (the stride is MAX_CLIENT_SPELLMOD); op 31 stays server side.
+    if (op >= MAX_CLIENT_SPELLMOD)
+    {
+        LOG_DEBUG("spells.aura", "Player::SendSpellModifier: op {} (bit {}) is not sent to the client", uint32(op), uint32(eff));
+        return;
+    }
+
+    // A modifier spell without a class family cannot be routed by the client.
+    if (!spellFamily)
+        return;
+
+    if (spellFamily == GetSpellModChassisFamily())
+    {
+        // Chassis family: the stock client handles these through the legacy 6 byte packet.
+        WorldPacket data(opcode, 1 + 1 + 4);
+        data << uint8(eff);
+        data << uint8(op);
+        data << int32(value);
+        SendDirectMessage(&data);
+        return;
+    }
+
+    if (spellFamily >= MAX_CLIENT_SPELLMOD_FAMILY)
+    {
+        LOG_DEBUG("spells.aura", "Player::SendSpellModifier: family {} is not sent to the client", spellFamily);
+        return;
+    }
+
+    WorldPacket data(SMSG_ESTERIA_SPELL_MOD, 1 + 1 + 1 + 4 + 4);
+    data << uint8(opcode == SMSG_SET_FLAT_SPELL_MODIFIER ? 0 : 1);
+    data << uint8(eff);
+    data << uint8(op);
+    data << int32(value);
+    data << uint32(spellFamily);
+    SendDirectMessage(&data);
+}
+
+void Player::SendSpellModReset() const
+{
+    WorldPacket data(SMSG_ESTERIA_SPELL_MOD, 1 + 1 + 1 + 4 + 4);
+    data << uint8(2);
+    data << uint8(0);
+    data << uint8(0);
+    data << int32(0);
+    data << uint32(0);
+    SendDirectMessage(&data);
+}
+
+void Player::ResendSpellModifiers() const
+{
+    // Xinef: we need to resend all spell mods. The new opcode carries totals per (family, bit, op, type), so clear
+    // the client tables first, a stale entry would otherwise survive because zero totals are not sent.
+    SendSpellModReset();
+
+    for (uint16 opcode = SMSG_SET_FLAT_SPELL_MODIFIER; opcode <= SMSG_SET_PCT_SPELL_MODIFIER; ++opcode) // PCT = FLAT+1
+    {
+        SpellModType const modType = (opcode == SMSG_SET_FLAT_SPELL_MODIFIER) ? SPELLMOD_FLAT : SPELLMOD_PCT;
+        for (uint32 op = SPELLMOD_DAMAGE; op < MAX_CLIENT_SPELLMOD; ++op)
+        {
+            SpellModContainer const& spellMods = GetSpellModList(op);
+            if (spellMods.empty())
+                continue;
+
+            std::set<uint32> families;
+            for (SpellModifier const* spellMod : spellMods)
+            {
+                if (spellMod->type != modType)
+                    continue;
+
+                SpellInfo const* info = sSpellMgr->GetSpellInfo(spellMod->spellId);
+                families.insert(info ? info->SpellFamilyName : 0);
+            }
+
+            for (uint32 family : families)
+            {
+                int32 i = 0;
+                flag96 _mask = 0;
+                for (int32 eff = 0; eff < 96; ++eff)
+                {
+                    if (eff != 0 && eff % 32 == 0)
+                        _mask[i++] = 0;
+
+                    _mask[i] = uint32(1) << (eff - (32 * i));
+                    int32 val = 0;
+                    for (SpellModifier const* spellMod : spellMods)
+                    {
+                        if (spellMod->type != modType || !(spellMod->mask & _mask))
+                            continue;
+
+                        SpellInfo const* info = sSpellMgr->GetSpellInfo(spellMod->spellId);
+                        if ((info ? info->SpellFamilyName : 0) == family)
+                            val += spellMod->value;
+                    }
+
+                    if (val == 0)
+                        continue;
+
+                    SendSpellModifier(opcode, eff, op, val, family);
+                }
+            }
+        }
+    }
+}
+
 void Player::AddSpellMod(SpellModifier* mod, bool apply)
 {
+    if (!mod)
+        return;
+
+    // Custom DBCs can contain modifier operations beyond the native table.
+    // Keep their owning aura intact, but never index m_spellMods out of range.
+    if (uint32(mod->op) >= MAX_SPELLMOD)
+    {
+        if (apply)
+            LOG_ERROR("spells.aura", "Spell {} uses unsupported modifier operation {}", mod->spellId, uint32(mod->op));
+        else if (!mod->ownerAura)
+            delete mod;
+        return;
+    }
+
     LOG_DEBUG("spells.aura", "Player::AddSpellMod {}", mod->spellId);
     uint16 Opcode = (mod->type == SPELLMOD_FLAT) ? SMSG_SET_FLAT_SPELL_MODIFIER : SMSG_SET_PCT_SPELL_MODIFIER;
 
+    SpellInfo const* modSpell = sSpellMgr->GetSpellInfo(mod->spellId);
+    uint32 const spellFamily = modSpell ? modSpell->SpellFamilyName : 0;
+
     int i = 0;
     flag96 _mask = 0;
-    for (int eff = 0; eff < 96; ++eff)
+    for (int eff = 0; eff < 96 && uint32(mod->op) < MAX_CLIENT_SPELLMOD; ++eff)
     {
         if (eff != 0 && eff % 32 == 0)
             _mask[i++] = 0;
@@ -10256,18 +10593,21 @@ void Player::AddSpellMod(SpellModifier* mod, bool apply)
         _mask[i] = uint32(1) << (eff - (32 * i));
         if (mod->mask & _mask)
         {
+            // The client keeps one total per (family, bit, op, type): sum only mods of the same family.
             int32 val = 0;
             for (SpellModContainer::iterator itr = m_spellMods[mod->op].begin(); itr != m_spellMods[mod->op].end(); ++itr)
             {
                 if ((*itr)->type == mod->type && (*itr)->mask & _mask)
+                {
+                    SpellInfo const* itrSpell = sSpellMgr->GetSpellInfo((*itr)->spellId);
+                    if (!itrSpell || itrSpell->SpellFamilyName != spellFamily)
+                        continue;
+
                     val += (*itr)->value;
+                }
             }
             val += apply ? mod->value : -(mod->value);
-            WorldPacket data(Opcode, (1 + 1 + 4));
-            data << uint8(eff);
-            data << uint8(mod->op);
-            data << int32(val);
-            SendDirectMessage(&data);
+            SendSpellModifier(Opcode, eff, mod->op, val, spellFamily);
         }
     }
 
@@ -11122,7 +11462,8 @@ bool Player::BuyItemFromVendorSlot(ObjectGuid vendorguid, uint32 vendorslot, uin
         return false;
     }
 
-    if (!(pProto->AllowableClass & getClassMask()) && pProto->Bonding == BIND_WHEN_PICKED_UP && !IsGameMaster())
+    if (getClass() != CLASS_HERO && !(pProto->AllowableClass & getClassMask())
+        && pProto->Bonding == BIND_WHEN_PICKED_UP && !IsGameMaster())
     {
         SendBuyError(BUY_ERR_CANT_FIND_ITEM, nullptr, item, 0);
         return false;
@@ -11298,6 +11639,9 @@ uint32 Player::GetMaxPersonalArenaRatingRequirement(uint32 minarenaslot) const
 
 void Player::AddSpellAndCategoryCooldowns(SpellInfo const* spellInfo, uint32 itemId, Spell* spell, bool infinityCooldown)
 {
+    if (getClass() == CLASS_HERO && spell && !itemId && !infinityCooldown && spellInfo->MaxCharges)
+        ConsumeSpellCharge(spellInfo, spell);
+
     // init cooldown values
     uint32 cat   = 0;
     int32 rec    = -1;
@@ -11330,6 +11674,8 @@ void Player::AddSpellAndCategoryCooldowns(SpellInfo const* spellInfo, uint32 ite
         cat = spellInfo->GetCategory();
         rec = spellInfo->RecoveryTime;
         catrec = spellInfo->CategoryRecoveryTime;
+        if (getClass() == CLASS_HERO && spellInfo->MaxCharges)
+            catrec = 0;
     }
 
     time_t catrecTime;
@@ -11374,6 +11720,9 @@ void Player::AddSpellAndCategoryCooldowns(SpellInfo const* spellInfo, uint32 ite
         // replace negative cooldowns by 0
         if (rec < 0) rec = 0;
         if (catrec < 0) catrec = 0;
+
+        if (spell && !itemId)
+            sScriptMgr->OnPlayerSpellCooldownCalculated(this, spellInfo, spell, uint32(rec));
 
         // no cooldown after applying spell mods
         if (rec == 0 && catrec == 0)
@@ -12706,6 +13055,7 @@ void Player::GetAurasForTarget(Unit* target, bool force /*= false*/)
         auraApp->BuildUpdatePacket(data, false);
     }
 
+    sScriptMgr->OnSendAuraUpdate(target, this, nullptr, false);
     SendDirectMessage(&data);
 }
 
@@ -17100,8 +17450,241 @@ bool Player::IsSummonAsSpectator() const
     return m_summon_asSpectator && m_summon_expire >= GameTime::GetGameTime().count();
 }
 
+bool Player::HasStoredSpellCharges(SpellInfo const* spellInfo) const
+{
+    if (getClass() != CLASS_HERO || !spellInfo || !spellInfo->MaxCharges || !spellInfo->ChargeRecoveryKey)
+        return false;
+
+    auto found = m_charSettingsMap.find("core.spell_charge." + std::to_string(spellInfo->ChargeRecoveryKey));
+    if (found == m_charSettingsMap.end())
+        return false;
+
+    PlayerSettingVector const& values = found->second;
+    if (values.size() != 5 || values[4].value != 1 || values[0].value > spellInfo->MaxCharges ||
+        values[2].value > 999 || !values[3].value || values[3].value > DAY * IN_MILLISECONDS)
+        return false;
+
+    uint64 const nextRecovery = uint64(values[1].value) * IN_MILLISECONDS + values[2].value;
+    return values[0].value == spellInfo->MaxCharges ? nextRecovery == 0 : nextRecovery != 0;
+}
+
+SpellChargeState Player::GetSpellCharges(SpellInfo const* spellInfo) const
+{
+    if (getClass() != CLASS_HERO || !spellInfo || !spellInfo->MaxCharges || !spellInfo->ChargeRecoveryKey)
+        return {};
+
+    SpellChargeState state{spellInfo->MaxCharges, 0, spellInfo->ChargeRecoveryTime};
+    if (HasStoredSpellCharges(spellInfo))
+    {
+        auto const& values = m_charSettingsMap.at("core.spell_charge." + std::to_string(spellInfo->ChargeRecoveryKey));
+        state.Available = values[0].value;
+        state.NextRecovery = uint64(values[1].value) * IN_MILLISECONDS + values[2].value;
+        state.RecoveryTime = values[3].value;
+    }
+
+    uint64 const now = std::chrono::duration_cast<std::chrono::milliseconds>(
+        GameTime::GetSystemTime().time_since_epoch()).count();
+    state.Update(spellInfo->MaxCharges, now);
+    return state;
+}
+
+bool Player::SetSpellCharges(SpellInfo const* spellInfo, SpellChargeState const& state)
+{
+    if (getClass() != CLASS_HERO)
+        return false;
+    if (!spellInfo || !spellInfo->MaxCharges || !spellInfo->ChargeRecoveryKey ||
+        state.Available > spellInfo->MaxCharges || !state.RecoveryTime ||
+        state.RecoveryTime > DAY * IN_MILLISECONDS ||
+        state.NextRecovery / IN_MILLISECONDS > std::numeric_limits<uint32>::max() ||
+        (state.Available == spellInfo->MaxCharges ? state.NextRecovery != 0 : state.NextRecovery == 0))
+        return false;
+    StoreSpellCharges(spellInfo, state);
+    SendSpellChargeState(spellInfo->Id);
+    return true;
+}
+void Player::StoreSpellCharges(SpellInfo const* spellInfo, SpellChargeState const& state)
+{
+    if (getClass() != CLASS_HERO || !spellInfo || !spellInfo->ChargeRecoveryKey)
+        return;
+
+    std::string const source = "core.spell_charge." + std::to_string(spellInfo->ChargeRecoveryKey);
+    UpdatePlayerSetting(source, 0, state.Available);
+    UpdatePlayerSetting(source, 1, uint32(state.NextRecovery / IN_MILLISECONDS));
+    UpdatePlayerSetting(source, 2, uint32(state.NextRecovery % IN_MILLISECONDS));
+    UpdatePlayerSetting(source, 3, state.RecoveryTime);
+    UpdatePlayerSetting(source, 4, 1);
+}
+
+void Player::ConsumeSpellCharge(SpellInfo const* spellInfo, Spell* spell)
+{
+    if (getClass() != CLASS_HERO || GetCommandStatus(CHEAT_COOLDOWN) || !spellInfo || !spellInfo->MaxCharges ||
+        !spellInfo->ChargeRecoveryKey)
+        return;
+
+    int32 recovery = int32(spellInfo->ChargeRecoveryTime);
+    ApplySpellMod(spellInfo->Id, SPELLMOD_COOLDOWN, recovery, spell);
+    recovery = std::clamp(recovery, 1, int32(DAY * IN_MILLISECONDS));
+
+    SpellChargeState state = GetSpellCharges(spellInfo);
+    uint64 const now = std::chrono::duration_cast<std::chrono::milliseconds>(
+        GameTime::GetSystemTime().time_since_epoch()).count();
+    if (!state.Consume(spellInfo->MaxCharges, uint32(recovery), now))
+        return;
+
+    StoreSpellCharges(spellInfo, state);
+    SendSpellChargeState(spellInfo->Id);
+}
+
+void Player::RestoreSpellCharge(uint32 spellId, uint32 count)
+{
+    if (getClass() != CLASS_HERO)
+        return;
+
+    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+    if (!spellInfo || !spellInfo->MaxCharges || !spellInfo->ChargeRecoveryKey)
+    {
+        RemoveSpellCooldown(spellId, true);
+        return;
+    }
+
+    SpellChargeState state = GetSpellCharges(spellInfo);
+    uint64 const now = std::chrono::duration_cast<std::chrono::milliseconds>(
+        GameTime::GetSystemTime().time_since_epoch()).count();
+    state.Restore(spellInfo->MaxCharges, count, now);
+    StoreSpellCharges(spellInfo, state);
+    SendSpellChargeState(spellId);
+}
+
+void Player::RestoreSpellChargeCategory(uint32 categoryId, uint32 count)
+{
+    if (getClass() != CLASS_HERO || !categoryId || !count)
+        return;
+
+    std::unordered_map<uint32, uint32> poolSpellIds;
+    for (auto const& [spellId, playerSpell] : m_spells)
+    {
+        if (playerSpell->State == PLAYERSPELL_REMOVED)
+            continue;
+
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        if (spellInfo && spellInfo->MaxCharges && spellInfo->ChargeCategoryId == categoryId &&
+            spellInfo->ChargeRecoveryKey)
+            poolSpellIds.try_emplace(spellInfo->ChargeRecoveryKey, spellId);
+    }
+
+    for (auto const& pool : poolSpellIds)
+        RestoreSpellCharge(pool.second, count);
+}
+
+void Player::RestoreAllSpellCharges()
+{
+    if (getClass() != CLASS_HERO)
+        return;
+
+    std::unordered_map<uint32, uint32> poolSpellIds;
+    for (auto const& [spellId, playerSpell] : m_spells)
+    {
+        if (playerSpell->State == PLAYERSPELL_REMOVED)
+            continue;
+
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        if (spellInfo && spellInfo->MaxCharges && spellInfo->ChargeRecoveryKey)
+            poolSpellIds.try_emplace(spellInfo->ChargeRecoveryKey, spellId);
+    }
+
+    for (auto const& pool : poolSpellIds)
+    {
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(pool.second);
+        if (spellInfo)
+            RestoreSpellCharge(pool.second, spellInfo->MaxCharges);
+    }
+}
+
+void Player::SendSpellChargeState(uint32 spellId) const
+{
+    if (getClass() != CLASS_HERO || !GetSession())
+        return;
+
+    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+    if (!spellInfo || !spellInfo->MaxCharges || !spellInfo->ChargeRecoveryKey || !spellInfo->ChargeCategoryId)
+        return;
+
+    SpellChargeState const state = GetSpellCharges(spellInfo);
+    uint64 const now = std::chrono::duration_cast<std::chrono::milliseconds>(
+        GameTime::GetSystemTime().time_since_epoch()).count();
+    uint32 const remaining = uint32(state.NextRecovery > now ? state.NextRecovery - now : 0);
+    uint32 const missing = spellInfo->MaxCharges - std::min<uint32>(state.Available, spellInfo->MaxCharges);
+
+    WorldPacket packet(SMSG_ESTERIA_SPELL_CHARGES_SET, 16);
+    packet << uint32(spellInfo->ChargeRecoveryKey);
+    packet << uint32(missing && remaining ? remaining : std::max<uint32>(state.RecoveryTime, 1));
+    packet << uint32(std::min<uint32>(missing, 255));
+    packet << uint32(state.RecoveryTime);
+    SendDirectMessage(&packet);
+}
+
+void Player::SendAllSpellChargeStates() const
+{
+    if (getClass() != CLASS_HERO || !GetSession())
+        return;
+
+    std::unordered_map<uint32, uint32> poolSpellIds;
+    for (auto const& [spellId, playerSpell] : m_spells)
+    {
+        if (playerSpell->State == PLAYERSPELL_REMOVED || !playerSpell->Active)
+            continue;
+
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        if (spellInfo && spellInfo->MaxCharges && spellInfo->ChargeRecoveryKey && spellInfo->ChargeCategoryId)
+            poolSpellIds.try_emplace(spellInfo->ChargeRecoveryKey, spellId);
+    }
+
+    WorldPacket clear(SMSG_ESTERIA_SPELL_CHARGES_CLEAR);
+    SendDirectMessage(&clear);
+
+    std::vector<std::tuple<uint32, uint32, uint8, uint32>> pools;
+    uint64 const now = std::chrono::duration_cast<std::chrono::milliseconds>(
+        GameTime::GetSystemTime().time_since_epoch()).count();
+    for (auto const& [recoveryKey, spellId] : poolSpellIds)
+    {
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        if (!spellInfo)
+            continue;
+
+        SpellChargeState const state = GetSpellCharges(spellInfo);
+        uint32 const missing = spellInfo->MaxCharges - std::min<uint32>(state.Available, spellInfo->MaxCharges);
+        if (!missing)
+            continue;
+
+        uint32 const remaining = uint32(state.NextRecovery > now ? state.NextRecovery - now : 0);
+        pools.emplace_back(recoveryKey, std::max<uint32>(remaining, 1), uint8(std::min<uint32>(missing, 255)),
+            state.RecoveryTime);
+    }
+
+    if (pools.empty())
+        return;
+
+    WorldPacket packet(SMSG_ESTERIA_SPELL_CHARGES_LIST, 4 + pools.size() * 13);
+    packet << uint32(pools.size());
+    for (auto const& [recoveryKey, remaining, missing, recoveryTime] : pools)
+    {
+        packet << uint32(recoveryKey);
+        packet << uint32(remaining);
+        packet << uint8(missing);
+        packet << uint32(recoveryTime);
+    }
+    SendDirectMessage(&packet);
+}
+
 bool Player::HasSpellCooldown(uint32 spell_id) const
 {
+    if (getClass() == CLASS_HERO)
+    {
+        if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spell_id))
+            if (spellInfo->MaxCharges && spellInfo->ChargeRecoveryKey && GetSpellCharges(spellInfo).Available == 0)
+                return true;
+    }
+
     SpellCooldowns::const_iterator itr = m_spellCooldowns.find(spell_id);
     return itr != m_spellCooldowns.end() && itr->second.end > getMSTime();
 }
@@ -17114,8 +17697,26 @@ bool Player::HasSpellItemCooldown(uint32 spell_id, uint32 itemid) const
 
 uint32 Player::GetSpellCooldownDelay(uint32 spell_id) const
 {
+    uint32 chargeDelay = 0;
+    if (getClass() == CLASS_HERO)
+    {
+        if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spell_id))
+        {
+            if (spellInfo->MaxCharges && spellInfo->ChargeRecoveryKey)
+            {
+                SpellChargeState const state = GetSpellCharges(spellInfo);
+                uint64 const now = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    GameTime::GetSystemTime().time_since_epoch()).count();
+                if (!state.Available)
+                    chargeDelay = uint32(state.NextRecovery > now ? state.NextRecovery - now : 0);
+            }
+        }
+    }
+
     SpellCooldowns::const_iterator itr = m_spellCooldowns.find(spell_id);
-    return uint32(itr != m_spellCooldowns.end() && itr->second.end > getMSTime() ? itr->second.end - getMSTime() : 0);
+    uint32 const cooldownDelay = uint32(itr != m_spellCooldowns.end() && itr->second.end > getMSTime() ?
+        itr->second.end - getMSTime() : 0);
+    return std::max(chargeDelay, cooldownDelay);
 }
 
 std::string Player::GetDebugInfo() const

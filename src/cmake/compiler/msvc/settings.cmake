@@ -41,6 +41,12 @@ target_compile_options(acore-compile-option-interface
       /Zc:preprocessor)
 message(STATUS "MSVC: Enabled standard conforming preprocessor")
 
+# Template-heavy modules can exceed the standard object section limit in any configuration.
+target_compile_options(acore-compile-option-interface
+  INTERFACE
+    /bigobj)
+message(STATUS "MSVC: Enabled extended object support for all configurations")
+
 if(PLATFORM EQUAL 64)
   # This definition is necessary to work around a bug with Intellisense described
   # here: http://tinyurl.com/2cb428.  Syntax highlighting is important for proper

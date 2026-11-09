@@ -1,0 +1,11 @@
+DELETE FROM spell_script_names WHERE spell_id = 500566 AND ScriptName = 'aura_ascension_witch_hunter_anguish';
+DELETE FROM spell_script_names WHERE spell_id = 523510 AND ScriptName = 'spell_ascension_witch_hunter_greater_knights_edict';
+DELETE FROM spell_script_names WHERE spell_id = 531512 AND ScriptName = 'spell_ascension_stormbringer_aether_current';
+DELETE FROM spell_script_names WHERE spell_id = 563124 AND ScriptName = 'aura_ascension_bloodmage_female_worgen';
+DELETE FROM spell_script_names WHERE spell_id = 680687 AND ScriptName = 'aura_ascension_bloodmage_empowered_indicator';
+DELETE FROM spell_script_names WHERE spell_id = 800157 AND ScriptName = 'aura_ascension_bloodmage_female_worgen';
+DELETE FROM spell_script_names WHERE spell_id = 800175 AND ScriptName = 'aura_ascension_bloodmage_female_worgen';
+DELETE FROM spell_script_names WHERE spell_id = 801343 AND ScriptName = 'spell_ascension_witch_hunter_whistle';
+DELETE FROM spell_script_names WHERE spell_id = 802028 AND ScriptName = 'spell_ascension_felsworn_chaos_rush';
+DELETE FROM spell_script_names WHERE spell_id = 804203 AND ScriptName = 'aura_ascension_bloodmage_apotheosis';
+DELETE FROM spell_script_names WHERE spell_id = 806723 AND ScriptName = 'aura_ascension_bloodmage_shadow_colony';

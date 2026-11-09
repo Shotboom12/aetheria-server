@@ -715,6 +715,10 @@ void CharacterDatabaseConnection::DoPrepareStatements()
     PrepareStatement(CHAR_SEL_LAUNCHER_ACHIEVEMENTS,
         "SELECT guid, achievement FROM character_achievement WHERE FIND_IN_SET(guid, ?)", CONNECTION_ASYNC);
 
+    PrepareStatement(CHAR_SEL_SWAP_ROSTER,
+        "SELECT guid, name, race, class, gender, level, map, zone, (health = 0 OR (playerFlags & ?) <> 0) "
+        "FROM characters WHERE account = ? AND deleteInfos_Account IS NULL ORDER BY guid LIMIT 255", CONNECTION_ASYNC);
+
     PrepareStatement(CHAR_NO_OP_PROVIDE_REALM_CONTEXT, "SELECT ? AS no_op", CONNECTION_ASYNC);
 }
 

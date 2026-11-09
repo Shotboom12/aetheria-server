@@ -1126,7 +1126,7 @@ bool Player::SatisfyQuestClass(Quest const* qInfo, bool msg) const
 {
     uint32 reqClass = qInfo->GetRequiredClasses();
 
-    if (reqClass == 0)
+    if (reqClass == 0 || getClass() == CLASS_HERO)
         return true;
 
     if ((reqClass & getClassMask()) == 0)

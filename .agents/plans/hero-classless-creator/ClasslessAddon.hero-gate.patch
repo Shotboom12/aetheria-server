@@ -1,0 +1,25 @@
+diff --git a/modules/mod-classless-wildcard/src/ClasslessAddon.cpp b/modules/mod-classless-wildcard/src/ClasslessAddon.cpp
+--- a/modules/mod-classless-wildcard/src/ClasslessAddon.cpp
++++ b/modules/mod-classless-wildcard/src/ClasslessAddon.cpp
+@@ -852,17 +852,20 @@
+     bool OnPlayerCanUseChat(Player* player, uint32 type, uint32 language, std::string& msg, Player* receiver) override
+     {
+-        if (!sClasslessMgr->cfg.enabled)
+-            return true;
+         if (language != LANG_ADDON || type != CHAT_MSG_WHISPER || receiver != player)
+             return true;
+ 
+         // client sends "CWCL\t<request>"
+         std::string_view view = msg;
+         if (view.substr(0, 5) != "CWCL\t")
+             return true;
++
++        // Consume CWCL messages without parsing or touching classless state
++        // for disabled/non-Hero characters. Keep this before HandleRequest.
++        if (!sClasslessMgr->cfg.enabled || !player || player->getClass() != CLASS_HERO)
++            return false;
++
+         HandleRequest(player, view.substr(5));
+         return false; // swallow the self-whisper
+     }
+ };

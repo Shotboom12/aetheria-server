@@ -22,6 +22,9 @@ void AddSC_kyrian_hover();
 void AddSC_kyrian_racials();
 void AddSC_venthyr_racials();
 void AddSC_ethereal_forms();
+void AddSC_race_racials();
+void AddSC_drakkin_racials();
+void AddSC_drakonid_racials();
 
 // The name of this function should match:
 // void Add${NameOfDirectory}Scripts()
@@ -33,4 +36,7 @@ void AddCustomScripts()
     AddSC_kyrian_racials();
     AddSC_venthyr_racials();
     AddSC_ethereal_forms();
+    AddSC_race_racials();
+    AddSC_drakkin_racials();
+    AddSC_drakonid_racials();
 }

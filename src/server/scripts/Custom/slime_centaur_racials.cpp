@@ -127,6 +127,23 @@ public:
     }
 };
 
+class slime_creature_level : public AllCreatureScript
+{
+public:
+    slime_creature_level() : AllCreatureScript("slime_creature_level") { }
+
+    // Runs while the slime is added to the map, before the first create packet reaches any client.
+    void OnCreatureAddWorld(Creature* creature) override
+    {
+        if (creature->GetEntry() != SlimeCreature)
+            return;
+        TempSummon* summon = creature->ToTempSummon();
+        Unit* owner = summon ? summon->GetSummonerUnit() : nullptr;
+        if (owner)
+            creature->SetLevel(owner->GetLevel(), false);
+    }
+};
+
 class slime_toxic_damage : public UnitScript
 {
 public:
@@ -180,7 +197,8 @@ class spell_slime_trail : public AuraScript
                 slime->SetOwnerGUID(target->GetGUID());
                 slime->SetFaction(target->GetFaction());
                 slime->SetPvP(target->IsPvP());
-                slime->SetLevel(target->GetLevel());
+                // Level is set in slime_creature_level before clients first see the slime; changing it here made the
+                // client play the level-up sound for every slime.
                 slime->SetMaxHealth(std::max<uint32>(1, target->CountPctFromMaxHealth(5)));
                 slime->SetHealth(slime->GetMaxHealth());
             }
@@ -312,6 +330,7 @@ void AddSC_slime_centaur_racials()
 {
     new slime_centaur_players();
     new slime_toxic_damage();
+    new slime_creature_level();
     RegisterSpellScript(spell_slime_reconstitution);
     RegisterSpellScript(spell_slime_trail);
     RegisterSpellScript(spell_sticky_slime);

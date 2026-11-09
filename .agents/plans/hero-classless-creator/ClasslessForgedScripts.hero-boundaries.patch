@@ -1,0 +1,29 @@
+--- a/src/ClasslessForgedScripts.cpp
++++ b/src/ClasslessForgedScripts.cpp
+@@ -106,5 +106,6 @@
+     int32 HeroTalentAmount(Unit const* unit, uint32 icon)
+     {
+-        if (!unit)
++        Player const* player = unit ? unit->ToPlayer() : nullptr;
++        if (!sClasslessMgr->IsParticipant(player))
+             return 0;
+@@ -122,3 +123,3 @@
+         Player* player = attacker ? attacker->ToPlayer() : nullptr;
+-        if (!player || amount <= 0)
++        if (!sClasslessMgr->IsParticipant(player) || amount <= 0)
+             return;
+@@ -220,3 +221,3 @@
+     {
+-        if (!player || !spell || !spell->GetSpellInfo())
++        if (!sClasslessMgr->IsParticipant(player) || !spell || !spell->GetSpellInfo())
+             return;
+@@ -244,5 +245,8 @@
+                     if (cost > 0)
+-                        player->m_Events.AddEventAtOffset([player, power, cost]()
++                        player->m_Events.AddEventAtOffset([guid = player->GetGUID(), power, cost]()
+                         {
+-                            player->ModifyPower(power, cost);
++                            if (Player* current = ObjectAccessor::FindPlayer(guid))
++                                if (sClasslessMgr->IsParticipant(current))
++                                    current->ModifyPower(power, cost);
+                         }, 1ms);

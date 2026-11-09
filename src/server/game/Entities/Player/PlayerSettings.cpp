@@ -19,6 +19,7 @@
 #include "StringConvert.h"
 #include "Tokenize.h"
 #include "CharacterDatabase.h"
+#include <string_view>
 
 /*********************************************************/
 /***              PLAYER SETTINGS SYSTEM               ***/
@@ -26,6 +27,12 @@
 
 namespace PlayerSettingsStore
 {
+    static bool IsCoreSpellChargeSetting(std::string const& source)
+    {
+        constexpr std::string_view prefix = "core.spell_charge.";
+        return source.compare(0, prefix.size(), prefix) == 0;
+    }
+
     // Common helper: parse space-separated data string into PlayerSettingVector
     PlayerSettingVector ParseSettingsData(std::string const& data)
     {
@@ -111,22 +118,33 @@ void Player::_LoadCharacterSettings(PreparedQueryResult result)
 {
     m_charSettingsMap.clear();
 
-    if (!sWorld->getBoolConfig(CONFIG_PLAYER_SETTINGS_ENABLED))
-        return;
-
     if (!result)
         return;
+
+    bool const playerSettingsEnabled = sWorld->getBoolConfig(CONFIG_PLAYER_SETTINGS_ENABLED);
 
     do
     {
         Field* fields = result->Fetch();
         std::string source = fields[0].Get<std::string>();
+        // Internal cooldown persistence is independent of optional player-facing settings.
+        if (!sWorld->getBoolConfig(CONFIG_PLAYER_SETTINGS_ENABLED) && !source.starts_with("core.spell_charge."))
+            continue;
         std::string data = fields[1].Get<std::string>();
+
+        if (!playerSettingsEnabled && !PlayerSettingsStore::IsCoreSpellChargeSetting(source))
+            continue;
 
         PlayerSettingVector settings = PlayerSettingsStore::ParseSettingsData(data);
         m_charSettingsMap.emplace(std::move(source), std::move(settings));
 
     } while (result->NextRow());
+}
+
+PlayerSettingVector const* Player::FindPlayerSettings(std::string const& source) const
+{
+    auto const found = m_charSettingsMap.find(source);
+    return found == m_charSettingsMap.end() ? nullptr : &found->second;
 }
 
 PlayerSetting Player::GetPlayerSetting(std::string const& source, uint32 index)
@@ -143,12 +161,15 @@ PlayerSetting Player::GetPlayerSetting(std::string const& source, uint32 index)
 
 void Player::_SavePlayerSettings(CharacterDatabaseTransaction trans)
 {
-    if (!sWorld->getBoolConfig(CONFIG_PLAYER_SETTINGS_ENABLED))
-        return;
+    bool const playerSettingsEnabled = sWorld->getBoolConfig(CONFIG_PLAYER_SETTINGS_ENABLED);
 
     for (auto const& [source, settings] : m_charSettingsMap)
     {
-        if (settings.empty())
+        if ((!sWorld->getBoolConfig(CONFIG_PLAYER_SETTINGS_ENABLED) && !source.starts_with("core.spell_charge.")) ||
+            settings.empty())
+            continue;
+
+        if (!playerSettingsEnabled && !PlayerSettingsStore::IsCoreSpellChargeSetting(source))
             continue;
 
         CharacterDatabasePreparedStatement* stmt = PlayerSettingsStore::PrepareReplaceStatement(GetGUID().GetCounter(), source, settings);

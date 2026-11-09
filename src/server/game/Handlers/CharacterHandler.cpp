@@ -419,7 +419,8 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
     LOG_INFO("server.character.creation", "Character creation request: account={}, race={}, class={}, gender={}, bytes={}",
         GetAccountId(), createInfo->Race, createInfo->Class, createInfo->Gender, recvData.size());
 
-    if (!CharacterRetailLook::ReadTail(recvData, createInfo->HasRetailLook, createInfo->RetailLook)
+    if (!CharacterStartZone::ReadTail(recvData, createInfo->HasStartZone, createInfo->StartZone)
+        || !CharacterRetailLook::ReadTail(recvData, createInfo->HasRetailLook, createInfo->RetailLook)
         || (createInfo->HasRetailLook && (createInfo->RetailLook.race != createInfo->Race || createInfo->RetailLook.sex != createInfo->Gender)))
     {
         LOG_INFO("server.character.creation", "Character creation decision: account={}, result={}, stage={}",
@@ -658,6 +659,42 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
         SendCharCreate(CHAR_CREATE_EXPANSION_CLASS);
         LOG_ERROR("network.opcode", "Expansion {} account:[{}] tried to Create character with expansion {} class ({})", Expansion(), GetAccountId(), classEntry->expansion, createInfo->Class);
         return;
+    }
+
+    if (createInfo->HasStartZone && createInfo->StartZone != CharacterStartZone::RaceDefault)
+    {
+        CharacterStartZone::Faction const startFaction = CharacterStartZone::StartFaction(createInfo->StartZone);
+        TeamId const raceTeam = Player::TeamIdForRace(createInfo->Race);
+        if ((raceEntry->TeamID != 1 && raceEntry->TeamID != 7)
+            || createInfo->Class == CLASS_DEATH_KNIGHT
+            || (startFaction == CharacterStartZone::Alliance && raceTeam != TEAM_ALLIANCE)
+            || (startFaction == CharacterStartZone::Horde && raceTeam != TEAM_HORDE)
+            || startFaction == CharacterStartZone::NoFaction)
+        {
+            LOG_INFO("server.character.creation", "Rejected start-zone selection {} for race {}, class {}, team {}",
+                createInfo->StartZone, createInfo->Race, createInfo->Class, uint32(raceTeam));
+            SendCharCreate(CHAR_CREATE_FAILED);
+            return;
+        }
+
+        PlayerInfo const* startInfo = sObjectMgr->GetPlayerInfo(CharacterStartZone::StartRace(createInfo->StartZone), CLASS_WARRIOR);
+        MapEntry const* startMap = startInfo ? sMapStore.LookupEntry(startInfo->mapId) : nullptr;
+        if (!startInfo || !startMap || startMap->Instanceable()
+            || !MapMgr::IsValidMapCoord(startInfo->mapId, startInfo->positionX, startInfo->positionY,
+                startInfo->positionZ))
+        {
+            LOG_ERROR("server.character.creation", "Start-zone {} has no valid non-instanceable start location",
+                createInfo->StartZone);
+            SendCharCreate(CHAR_CREATE_FAILED);
+            return;
+        }
+
+        createInfo->StartMapId = startInfo->mapId;
+        createInfo->StartAreaId = startInfo->areaId;
+        createInfo->StartPositionX = startInfo->positionX;
+        createInfo->StartPositionY = startInfo->positionY;
+        createInfo->StartPositionZ = startInfo->positionZ;
+        createInfo->StartOrientation = startInfo->orientation;
     }
 
     if (!HasPermission(rbac::RBAC_PERM_SKIP_CHECK_CHARACTER_CREATION_RACEMASK))
@@ -944,6 +981,17 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
 
             // Player created, save it now
             newChar->SaveToDB(characterTransaction, true, false);
+            if (createInfo->HasStartZone && createInfo->StartZone != CharacterStartZone::RaceDefault)
+            {
+                CharacterDatabasePreparedStatement* homebind = CharacterDatabase.GetPreparedStatement(CHAR_INS_PLAYER_HOMEBIND);
+                homebind->SetData(0, newChar->GetGUID().GetRawValue());
+                homebind->SetData(1, createInfo->StartMapId);
+                homebind->SetData(2, createInfo->StartAreaId);
+                homebind->SetData(3, createInfo->StartPositionX);
+                homebind->SetData(4, createInfo->StartPositionY);
+                homebind->SetData(5, createInfo->StartPositionZ);
+                characterTransaction->Append(homebind);
+            }
                         if (createInfo->HasBodyShape && !CharacterBodyShape::AllDefault(createInfo->BodyShape))
                         {
                             std::vector<uint8> payload(CharacterBodyShape::PayloadSize);
@@ -1123,6 +1171,9 @@ void WorldSession::HandlePlayerLoginOpcode(WorldPacket& recvData)
         return;
     }
 
+    _swapLogin = playerGuid == _swapTarget && GameTime::GetGameTimeMS() - _swapTime < 30s;
+    _swapTarget.Clear();
+
     // pussywizard:
     if (WorldSession* sess = sWorldSessionMgr->FindOfflineSessionForCharacterGUID(playerGuid.GetCounter()))
     {
@@ -1256,7 +1307,8 @@ void WorldSession::HandlePlayerLoginFromDB(LoginQueryHolder const& holder)
     data << uint8(0);                                       // enable(1)/disable(0) voice chat interface in client
     SendPacket(&data);
 
-    // Send MOTD
+    // A character swap is not a new visit to the realm.
+    if (!_swapLogin)
     {
         SendPacket(sMotdMgr->GetMotdPacket(pCurrChar->GetSession()->GetSessionDbLocaleIndex()));
 
@@ -1587,7 +1639,8 @@ void WorldSession::HandlePlayerLoginToCharInWorld(Player* pCurrChar)
     data << uint8(0);                                       // enable(1)/disable(0) voice chat interface in client
     SendPacket(&data);
 
-    // Send MOTD
+    // A character swap is not a new visit to the realm.
+    if (!_swapLogin)
     {
         SendPacket(sMotdMgr->GetMotdPacket(pCurrChar->GetSession()->GetSessionDbLocaleIndex()));
 
@@ -1635,39 +1688,7 @@ void WorldSession::HandlePlayerLoginToCharInWorld(Player* pCurrChar)
     pCurrChar->SetInGameTime(GameTime::GetGameTimeMS().count());
 
     // Xinef: we need to resend all spell mods
-    for (uint16 Opcode = SMSG_SET_FLAT_SPELL_MODIFIER; Opcode <= SMSG_SET_PCT_SPELL_MODIFIER; ++Opcode) // PCT = FLAT+1
-    {
-        uint32 modType = (Opcode == SMSG_SET_FLAT_SPELL_MODIFIER) ? SPELLMOD_FLAT : SPELLMOD_PCT;
-        for (uint32 opType = SPELLMOD_DAMAGE; opType < MAX_SPELLMOD; ++opType)
-        {
-            int32 i = 0;
-            flag96 _mask = 0;
-            SpellModContainer const& spellMods = pCurrChar->GetSpellModList(opType);
-            if (spellMods.empty())
-                continue;
-
-            for (int32 eff = 0; eff < 96; ++eff)
-            {
-                if (eff != 0 && eff % 32 == 0)
-                    _mask[i++] = 0;
-
-                _mask[i] = uint32(1) << (eff - (32 * i));
-                int32 val = 0;
-                for (auto const& spellMod : spellMods)
-                    if (spellMod->type == modType && spellMod->mask & _mask)
-                        val += spellMod->value;
-
-                if (val == 0)
-                    continue;
-
-                WorldPacket data(Opcode, (1 + 1 + 4));
-                data << uint8(eff);
-                data << uint8(opType);
-                data << int32(val);
-                SendPacket(&data);
-            }
-        }
-    }
+    pCurrChar->ResendSpellModifiers();
 
     if (Group* group = pCurrChar->GetGroup())
         group->SendUpdate();

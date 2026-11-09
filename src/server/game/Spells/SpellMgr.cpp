@@ -16,6 +16,7 @@
  */
 
 #include "SpellMgr.h"
+#include "CoASpellChargesData.h"
 #include "Log.h"
 #include "BattlefieldMgr.h"
 #include "BattlegroundIC.h"
@@ -3568,6 +3569,24 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
             if (spellInfo->StartRecoveryCategory != spellOverride.StartRecoveryCategory)
             {
                 spellInfo->RecoveryTime = spellOverride.RecoveryTime;
+            }
+        }
+
+        // Catalog metadata alone grants no class access; Player charge behavior is explicitly Hero-only.
+        if (spellInfo->SpellFamilyName >= 18 && spellInfo->SpellFamilyName <= 38)
+        {
+            auto const chargeEntry = std::lower_bound(CoASpellCharges::Entries.begin(), CoASpellCharges::Entries.end(),
+                spellInfo->Id, [](CoASpellCharges::Entry const& entry, uint32 spellId)
+                {
+                    return entry.spell < spellId;
+                });
+
+            if (chargeEntry != CoASpellCharges::Entries.end() && chargeEntry->spell == spellInfo->Id)
+            {
+                spellInfo->MaxCharges = chargeEntry->maximum;
+                spellInfo->ChargeRecoveryTime = chargeEntry->recovery;
+                spellInfo->ChargeRecoveryKey = chargeEntry->root;
+                spellInfo->ChargeCategoryId = chargeEntry->category;
             }
         }
 

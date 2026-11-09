@@ -2371,7 +2371,8 @@ InventoryResult Player::CanUseItem(ItemTemplate const* proto) const
         return EQUIP_ERR_YOU_CAN_NEVER_USE_THAT_ITEM;
     }
 
-    if ((proto->AllowableClass & getClassMask()) == 0 || (proto->AllowableRace & getRaceMask()) == 0)
+    if ((getClass() != CLASS_HERO && (proto->AllowableClass & getClassMask()) == 0)
+        || (proto->AllowableRace & getRaceMask()) == 0)
     {
         return EQUIP_ERR_YOU_CAN_NEVER_USE_THAT_ITEM;
     }
@@ -2470,7 +2471,8 @@ InventoryResult Player::CanRollForItemInLFG(ItemTemplate const* proto, WorldObje
     if (proto->HasFlag2(ITEM_FLAG2_EVERYONE_CAN_ROLL_NEED))
         return EQUIP_ERR_OK;
 
-    if ((proto->AllowableClass & getClassMask()) == 0 || (proto->AllowableRace & getRaceMask()) == 0)
+    if ((getClass() != CLASS_HERO && (proto->AllowableClass & getClassMask()) == 0)
+        || (proto->AllowableRace & getRaceMask()) == 0)
         return EQUIP_ERR_YOU_CAN_NEVER_USE_THAT_ITEM;
 
     if (proto->RequiredSpell != 0 && !HasSpell(proto->RequiredSpell))
@@ -5901,8 +5903,17 @@ void Player::_LoadActions(PreparedQueryResult result)
             uint32 action = fields[1].Get<uint32>();
             uint8 type = fields[2].Get<uint8>();
 
+            uint32 const originalAction = action;
+            if (type == ACTION_BUTTON_SPELL)
+                sScriptMgr->OnPlayerNormalizeActionButtonSpell(this, action, true);
+
             if (ActionButton* ab = addActionButton(button, action, type))
-                ab->uState = ACTIONBUTTON_UNCHANGED;
+            {
+                uint32 persistenceAction = action;
+                if (type == ACTION_BUTTON_SPELL)
+                    sScriptMgr->OnPlayerNormalizeActionButtonSpell(this, persistenceAction, false);
+                ab->uState = persistenceAction == originalAction ? ACTIONBUTTON_UNCHANGED : ACTIONBUTTON_CHANGED;
+            }
             else
             {
 
@@ -7450,7 +7461,8 @@ void Player::_SaveActions(CharacterDatabaseTransaction trans)
                 stmt->SetData(0, GetGUID().GetRawValue());
                 stmt->SetData(1, m_activeSpec);
                 stmt->SetData(2, itr->first);
-                stmt->SetData(3, itr->second.GetAction());
+                stmt->SetData(3, itr->second.GetType() == ACTION_BUTTON_SPELL ?
+                    GetSavedActionButtonSpell(itr->second.GetAction()) : itr->second.GetAction());
                 stmt->SetData(4, uint8(itr->second.GetType()));
                 trans->Append(stmt);
 
@@ -7459,7 +7471,8 @@ void Player::_SaveActions(CharacterDatabaseTransaction trans)
                 break;
             case ACTIONBUTTON_CHANGED:
                 stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHAR_ACTION);
-                stmt->SetData(0, itr->second.GetAction());
+                stmt->SetData(0, itr->second.GetType() == ACTION_BUTTON_SPELL ?
+                    GetSavedActionButtonSpell(itr->second.GetAction()) : itr->second.GetAction());
                 stmt->SetData(1, uint8(itr->second.GetType()));
                 stmt->SetData(2, GetGUID().GetRawValue());
                 stmt->SetData(3, itr->first);

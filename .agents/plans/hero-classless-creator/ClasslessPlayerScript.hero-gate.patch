@@ -1,0 +1,171 @@
+--- a/modules/mod-classless-wildcard/src/ClasslessPlayerScript.cpp
++++ b/modules/mod-classless-wildcard/src/ClasslessPlayerScript.cpp
+@@ -56,6 +56,11 @@
+ 
+ class ClasslessPlayerScript : public PlayerScript
+ {
++    static bool IsHero(Player const* player)
++    {
++        return player && player->getClass() == CLASS_HERO;
++    }
++
+     // The last money a character SPENT, and the world tick it happened on.
+     // A class trainer takes the gold and then teaches the spell, and the
+     // module takes the spell straight back -- so without this the Hero pays
+@@ -90,7 +95,7 @@
+     // Runs before the money actually moves, with the signed delta.
+     void OnPlayerMoneyChanged(Player* player, int32& amount) override
+     {
+-        if (!sClasslessMgr->cfg.enabled || amount >= 0)
++        if (!sClasslessMgr->cfg.enabled || !IsHero(player) || amount >= 0)
+             return;
+         std::lock_guard<std::mutex> spendGuard(_lastSpendLock);
+         Spend& spend = _lastSpend[player->GetGUID().GetCounter()];
+@@ -201,7 +206,7 @@
+     // answer stands, which is what it was doing anyway.
+     bool OnPlayerHasActivePowerType(Player const* player, Powers power) override
+     {
+-        if (!sClasslessMgr->cfg.enabled || !player || !player->IsInWorld())
++        if (!sClasslessMgr->cfg.enabled || !IsHero(player) || !player->IsInWorld())
+             return false;
+         // bots and system accounts keep vanilla resource rules. In the world
+         // the state is already loaded, so this is a map lookup.
+@@ -227,7 +232,7 @@
+     Optional<bool> OnPlayerIsClass(Player const* player, Classes playerClass, ClassContext context) override
+     {
+         Config const& cfg = sClasslessMgr->cfg;
+-        if (!cfg.enabled)
++        if (!cfg.enabled || !IsHero(player))
+             return std::nullopt;
+ 
+         // Decide on the context BEFORE looking the character up. IsClass runs
+@@ -465,7 +470,7 @@
+                                                  CreatureTemplate const* cinfo, PetType& petType) override
+     {
+         Config const& cfg = sClasslessMgr->cfg;
+-        if (!cfg.enabled || !player || !guardian || !cinfo)
++        if (!cfg.enabled || !IsHero(player) || !guardian || !cinfo)
+             return;
+         if (sClasslessMgr->IsExempt(player))
+             return;
+@@ -483,7 +488,7 @@
+     void OnPlayerAfterUpdateMaxPower(Player* player, Powers& power, float& value) override
+     {
+         Config const& cfg = sClasslessMgr->cfg;
+-        if (!cfg.enabled)
++        if (!cfg.enabled || !IsHero(player))
+             return;
+         if (sClasslessMgr->IsExempt(player)) // bots/system accounts stay vanilla
+             return;
+@@ -501,14 +506,12 @@
+         }
+     }
+ 
+-    // Put the character on the one chassis the moment it is created, so the
+-    // character list, its starting stats and its saved class all agree from
+-    // the very first byte written.
++    // Apply Hero-only starter presentation after the character has already
++    // been created with Aetheria's real class ID 10.
+     void OnPlayerCreate(Player* player) override
+     {
+-        if (sClasslessMgr->cfg.enabled)
++        if (sClasslessMgr->cfg.enabled && IsHero(player))
+         {
+-            sClasslessMgr->EnforceChassis(player);
+             // Dress the Hero in the neutral outfit now, so the character-select
+             // screen shows it instead of the shell class's starting gear. This
+             // hook fires AFTER creation's SaveToDB already committed, so the
+@@ -520,19 +523,15 @@
+ 
+     void OnPlayerFirstLogin(Player* player) override
+     {
+-        if (sClasslessMgr->cfg.enabled)
++        if (sClasslessMgr->cfg.enabled && IsHero(player))
+             sClasslessMgr->HandleFirstLogin(player);
+     }
+ 
+     void OnPlayerLogin(Player* player) override
+     {
+         Config const& cfg = sClasslessMgr->cfg;
+-        if (!cfg.enabled)
+-            return;
+-
+-        // characters that predate the module, or predate a chassis change,
+-        // convert here on their next login
+-        sClasslessMgr->EnforceChassis(player);
++        if (!cfg.enabled || !IsHero(player))
++            return;
+ 
+         sClasslessMgr->HandleLogin(player);
+         sClasslessMgr->SynchronizeCoAAutomatic(player);
+@@ -590,6 +589,8 @@
+ 
+     void OnPlayerLogout(Player* player) override
+     {
++        if (!IsHero(player))
++            return;
+         std::lock_guard<std::mutex> spendGuard(_lastSpendLock);
+         _lastSpend.erase(player->GetGUID().GetCounter());
+         sClasslessMgr->UnloadState(player->GetGUID());
+@@ -604,7 +605,7 @@
+     void OnPlayerUpdate(Player* player, uint32 p_time) override
+     {
+         Config const& cfg = sClasslessMgr->cfg;
+-        if (!cfg.enabled)
++        if (!cfg.enabled || !IsHero(player))
+             return;
+         if (!player->IsInWorld() || !player->IsAlive())
+             return;
+@@ -805,13 +806,13 @@
+ 
+     void OnPlayerLevelChanged(Player* player, uint8 oldLevel) override
+     {
+-        if (sClasslessMgr->cfg.enabled)
++        if (sClasslessMgr->cfg.enabled && IsHero(player))
+         {
+             sClasslessMgr->HandleLevelUp(player, oldLevel);
+             sClasslessMgr->SynchronizeCoAAutomatic(player);   // a signature ability has its own level
+         }
+         // a level-up recalculates the points, so put them back to zero
+-        if (sClasslessMgr->cfg.enabled && !sClasslessMgr->IsExempt(player))
++        if (sClasslessMgr->cfg.enabled && IsHero(player) && !sClasslessMgr->IsExempt(player))
+             player->SetFreeTalentPoints(0);
+     }
+ 
+@@ -842,7 +843,7 @@
+ 
+     void OnPlayerCalculateTalentsPoints(Player const* player, uint32& talentPointsForLevel) override
+     {
+-        if (!sClasslessMgr->cfg.enabled)
++        if (!sClasslessMgr->cfg.enabled || !IsHero(player))
+             return;
+         if (sClasslessMgr->IsExempt(const_cast<Player*>(player)))
+             return;
+@@ -852,7 +853,7 @@
+ 
+     bool OnPlayerCanLearnTalent(Player* player, TalentEntry const* /*talent*/, uint32 /*rank*/) override
+     {
+-        if (!sClasslessMgr->cfg.enabled)
++        if (!sClasslessMgr->cfg.enabled || !IsHero(player))
+             return true;
+         return sClasslessMgr->IsExempt(player);
+     }
+@@ -866,7 +867,7 @@
+         using namespace ClasslessWildcard;
+ 
+         Config const& cfg = sClasslessMgr->cfg;
+-        if (!cfg.enabled)
++        if (!cfg.enabled || !IsHero(player))
+             return;
+         if (sClasslessMgr->IsApplyingGrant())
+             return; // our own grant
+@@ -974,7 +975,8 @@
+         if (!unit)
+             return false;
+         if (Player* player = unit->ToPlayer())
+-            if (sClasslessMgr->cfg.enabled && !sClasslessMgr->IsExempt(player))
++            if (player->getClass() == CLASS_HERO && sClasslessMgr->cfg.enabled
++                && !sClasslessMgr->IsExempt(player))
+                 return player->GetMaxPower(power) > 0;
+         return unit->getPowerType() == power;
+     }

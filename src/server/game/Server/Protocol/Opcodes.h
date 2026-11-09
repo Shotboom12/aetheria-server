@@ -1344,7 +1344,18 @@ enum Opcodes : uint16
     SMSG_ESTERIA_RETAIL_LOOK                        = 0x524,
     CMSG_ESTERIA_FORM_LOOK                          = 0x525,
     SMSG_ESTERIA_FORM_LOOK_ACK                      = 0x526,
-    NUM_MSG_TYPES                                   = 0x527
+    CMSG_ESTERIA_SWAP_REQUEST                       = 0x527,
+    SMSG_ESTERIA_SWAP_RESULT                        = 0x528,
+    CMSG_ESTERIA_SWAP_ROSTER_REQUEST                = 0x529,
+    SMSG_ESTERIA_SWAP_ROSTER                        = 0x52A,
+    SMSG_ESTERIA_SPELL_MOD                          = 0x530,
+    SMSG_ESTERIA_SPELL_CHARGES_CLEAR                = 0x531,
+    SMSG_ESTERIA_SPELL_CHARGES_REMOVE               = 0x532,
+    SMSG_ESTERIA_SPELL_CHARGES_LIST                 = 0x533,
+    SMSG_ESTERIA_SPELL_CHARGES_SET                  = 0x534,
+    SMSG_ESTERIA_AURA_AMOUNT                        = 0x535,
+    SMSG_ESTERIA_SPELL_VISUAL_OVERRIDE              = 0x536,
+    NUM_MSG_TYPES                                   = 0x537
 };
 
 enum OpcodeMisc : uint16

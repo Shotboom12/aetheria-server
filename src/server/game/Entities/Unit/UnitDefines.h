@@ -21,6 +21,14 @@
 #include "Define.h"
 #include "EnumFlag.h"
 
+enum WeaponAttackType : uint8
+{
+    BASE_ATTACK   = 0,
+    OFF_ATTACK    = 1,
+    RANGED_ATTACK = 2,
+    MAX_ATTACK
+};
+
 enum UnitBytes1Offsets : uint8
 {
     UNIT_BYTES_1_OFFSET_STAND_STATE     = 0,

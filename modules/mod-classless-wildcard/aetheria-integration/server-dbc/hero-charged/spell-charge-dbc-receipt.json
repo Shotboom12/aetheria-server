@@ -1,0 +1,10 @@
+{
+  "upstream": "STRHercules/EsteriaWoW@bdad58028fb6847b9d9a4fd8cf990bd662c9fc62/modules/mod-classless-wildcard/src/coa/CoASpellChargesData.h",
+  "metadata_sha256": "0ab24232adaa22d6f083e27e0c0109073ff9e4045f21adab5500dbd227976c4a",
+  "spell_links": 162,
+  "charge_pools": 55,
+  "dbc_sha256": {
+    "SpellCharges.dbc": "c522987350563c7086c10da76bb90752b640ca0fbfc8bfc626a2041f8c508ade",
+    "SpellChargesCategory.dbc": "a78c64370fd9b980fb3fa1b697cb21e8ef805ec5d1f45a46f204cca5b75bf388"
+  }
+}

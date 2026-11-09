@@ -826,7 +826,9 @@ void WorldSession::HandleAuctionListItems(WorldPacket& recvData)
     if (usable)
     {
         AuctionHouseUsablePlayerInfo usablePlayerInfo;
-        usablePlayerInfo.classMask = GetPlayer()->getClassMask();
+        usablePlayerInfo.classMask = GetPlayer()->getClass() == CLASS_HERO
+            ? CLASSMASK_ALL_PLAYABLE
+            : GetPlayer()->getClassMask();
         usablePlayerInfo.raceMask = GetPlayer()->getRaceMask();
         usablePlayerInfo.level = GetPlayer()->GetLevel();
 

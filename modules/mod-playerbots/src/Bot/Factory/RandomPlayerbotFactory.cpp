@@ -876,6 +876,10 @@ void RandomPlayerbotFactory::CreateRandomBots()
             if (!((1 << (cls - 1)) & CLASSMASK_ALL_PLAYABLE) || !sChrClassesStore.LookupEntry(cls))
                 continue;
 
+            // Aetheria: random bots are never created as the player-only Hero class
+            if (cls == CLASS_HERO)
+                continue;
+
             // skip disabled with config classes
             if ((1 << (cls - 1)) & sWorld->getIntConfig(CONFIG_CHARACTER_CREATING_DISABLED_CLASSMASK))
                 continue;

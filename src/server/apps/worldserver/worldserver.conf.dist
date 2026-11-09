@@ -4946,6 +4946,11 @@ Cluster.AvailableMaps=""
 
 Cluster.IsCrossrealm=0
 
+# Character hot-swap. Phase 1 performs a guarded logout and normal character login.
+# Keep disabled until the matching client extension/addon is installed and verified.
+Esteria.Swap.Enable = 0
+Esteria.Swap.CooldownSeconds = 30
+
 #
 ###################################################################################################
 

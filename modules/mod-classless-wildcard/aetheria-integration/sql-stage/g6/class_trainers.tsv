@@ -1,0 +1,274 @@
+map	name	subname	faction	x	y	z	o
+0	Ian Strom	Rogue Trainer	120	-14451	510	21.9	4.07
+0	Kragg	Hunter Trainer	29	-12389	228	2.4	4.4
+0	Haromm	Shaman Trainer	29	-10507	-3328	20.9	0.66
+0	Malosh	Warrior Trainer	29	-10502	-3253	21.2	5.99
+0	Kartosh	Warlock Trainer	29	-10472	-3339	25.6	1.08
+0	Ogromm	Hunter Trainer	29	-10438	-3307	20.4	5.97
+0	Maximillian Crowe	Warlock Trainer	12	-9473	-5	49.9	5.55
+0	Zaldimar Wefhellt	Mage Trainer	12	-9472	34	63.9	4.63
+0	Brother Wilhelm	Paladin Trainer	11	-9468	109	57.7	1.8
+0	Keryn Sylvius	Rogue Trainer	12	-9466	13	63.9	1.1
+0	Lyria Du Lac	Warrior Trainer	12	-9462	109	57.9	2.65
+0	Priestess Josetta	Priest Trainer	12	-9461	33	63.9	4.36
+0	Farseer Umbrua	Shaman Trainer	1640	-9032	550	73.5	5.18
+0	Elsharin	Mage Trainer	12	-9007	885	29.6	3.94
+0	Jennea Cannon	Mage Trainer	12	-8990	863	29.6	4.86
+0	Sandahl	Warlock Trainer	12	-8989	1034	101.5	6.06
+0	Demisette Cloyce	Warlock Trainer	12	-8980	1041	101.5	4.49
+0	Ursula Deline	Warlock Trainer	12	-8971	1030	101.5	2.97
+0	Drusilla La Salle	Warlock Trainer	12	-8927	-196	80.8	2.79
+0	Llane Beshere	Warrior Trainer	12	-8918	-208	82.3	6.06
+0	Brother Sammuel	Paladin Trainer	12	-8915	-215	82.3	1.2
+0	Jorik Kerridan	Rogue Trainer	12	-8863	-211	80.8	4.42
+0	Priestess Anetta	Priest Trainer	12	-8854	-193	82.1	2.55
+0	Khelden Bremen	Mage Trainer	12	-8852	-188	89.5	2.91
+0	Lord Tony Romano	Rogue Trainer	12	-8790	328	103.2	3.02
+0	Sheldras Moontree	Druid Trainer	12	-8776	1100	92.6	4.9
+0	Osborne the Night Man	Rogue Trainer	12	-8752	378	101.1	1.29
+0	Maldryn	Druid Trainer	12	-8751	1125	92.6	1.54
+0	Theridran	Druid Trainer	80	-8742	1095	93.8	5.35
+0	Nara Meideros	Priest Trainer	80	-8728	1103	92.6	3.88
+0	Ander Germaine	Warrior Trainer	12	-8705	330	112.1	5.88
+0	Wu Shen	Warrior Trainer	12	-8689	323	109.5	1.29
+0	Ilsa Corbin	Warrior Trainer	12	-8689	326	109.5	4.43
+0	Lord Grayson Shadowbreaker	Paladin Trainer	12	-8577	882	106.5	5.43
+0	Arthur the Faithful	Paladin Trainer	12	-8574	861	106.6	0.79
+0	Katherine the Pure	Paladin Trainer	12	-8565	880	106.5	3.78
+0	Brother Benjamin	Priest Trainer	11	-8548	815	106.5	3.85
+0	Brother Joshua	Priest Trainer	11	-8519	863	109.9	5.18
+0	High Priestess Laurena	Priest Trainer	12	-8512	862	109.9	3.82
+0	Einris Brightspear	Hunter Trainer	12	-8415	553	95.7	3.92
+0	Thorfin Stoneshield	Hunter Trainer	12	-8413	541	102.6	0.64
+0	Ulfir Ironbeard	Hunter Trainer	12	-8410	549	95.5	2.95
+0	Bromos Grummner	Paladin Trainer	55	-6121	382	395.6	6.16
+0	Solm Hargrin	Rogue Trainer	55	-6094	405	395.6	4.52
+0	Thorgas Grimson	Hunter Trainer	55	-6092	365	395.6	2.34
+0	Thran Khorman	Warrior Trainer	55	-6085	382	395.6	3.46
+0	Branstock Khalder	Priest Trainer	55	-6057	394	392.8	3.68
+0	Marryk Nurribit	Mage Trainer	875	-6056	388	392.9	3.33
+0	Alamar Grimm	Warlock Trainer	875	-6049	391	399.2	3.63
+0	Gimrizz Shadowcog	Warlock Trainer	875	-5640	-529	404.4	1.71
+0	Dargh Trueaim	Hunter Trainer	55	-5635	-4266	407.9	2.55
+0	Grif Wildheart	Hunter Trainer	55	-5619	-454	407.8	5.31
+0	Granis Swiftaxe	Warrior Trainer	55	-5606	-530	399.7	0.17
+0	Hogral Bakkan	Rogue Trainer	55	-5604	-540	399.2	5.24
+0	Maxan Anvol	Priest Trainer	55	-5591	-530	399.7	2.23
+0	Azar Stronghammer	Paladin Trainer	55	-5587	-542	403.6	1.1
+0	Magis Sparkmantle	Mage Trainer	875	-5587	-537	403.6	5.9
+0	Kelv Sternhammer	Warrior Trainer	55	-5048	-1270	510.4	6.25
+0	Kelstrum Stonebreaker	Warrior Trainer	55	-5045	-1243	507.8	5.46
+0	Daera Brightspear	Hunter Trainer	55	-5044	-1275	510.3	1.33
+0	Bilban Tosslespanner	Warrior Trainer	875	-5036	-1235	507.8	5.36
+0	Olmin Burningbeard	Hunter Trainer	55	-5010	-1274	507.8	2.27
+0	Regnus Thundergranite	Hunter Trainer	55	-5007	-1266	507.8	3.79
+0	Farseer Javad	Shaman Trainer	1638	-4720	-1150	502.4	3.76
+0	Fenthwick	Rogue Trainer	875	-4650	-1121	508.6	1.57
+0	Ormyr Flinteye	Rogue Trainer	55	-4648	-1132	508.6	0
+0	Hulfdan Blackbeard	Rogue Trainer	55	-4648	-1124	502	1.55
+0	Toldren Deepiron	Priest Trainer	55	-4626	-913	501.2	6.18
+0	Braenna Flintcrag	Priest Trainer	55	-4618	-907	501.2	4.45
+0	Dink	Mage Trainer	875	-4614	-928	501.2	0.8
+0	Theodrus Frostbeard	Priest Trainer	55	-4614	-904	524.8	2.22
+0	Bink	Mage Trainer	875	-4613	-929	501.2	1.34
+0	High Priest Rohan	Priest Trainer	122	-4612	-909	501.1	4.33
+0	Alexander Calder	Warlock Trainer	55	-4609	-1110	511.7	1.69
+0	Juli Stormkettle	Mage Trainer	875	-4605	-921	501.2	3.19
+0	Thistleheart	Warlock Trainer	55	-4604	-1118	505	4.54
+0	Nittlebur Sparkfizzle	Mage Trainer	55	-4602	-919	524.8	5.29
+0	Brandur Ironhammer	Paladin Trainer	55	-4602	-896	502.9	4.56
+0	Briarthorn	Warlock Trainer	875	-4599	-1112	505	4.69
+0	Valgar Highforge	Paladin Trainer	55	-4596	-901	524.8	0.7
+0	Beldruk Doombrow	Paladin Trainer	55	-4593	-908	502.9	3.21
+0	Champion Cyssa Dawnrose	Paladin Trainer	1604	1299	317	-58.4	6.09
+0	Gregory Charles	Rogue Trainer	68	1407	59	-62.2	0.45
+0	Carolyn Ward	Rogue Trainer	68	1417	69	-62.2	4.64
+0	Miles Dexter	Rogue Trainer	68	1420	56	-62.2	2.18
+0	Father Lazarus	Priest Trainer	68	1757	417	-57.1	3.4
+0	Baltus Fowler	Warrior Trainer	68	1767	418	-57.1	0.12
+0	Aelthalyste	Priest Trainer	68	1768	401	-57.1	4.4
+0	Derek the Undying	Mage Trainer	68	1773	333	-62.2	1.5
+0	Richard Kerwin	Warlock Trainer	68	1776	20	-47.3	1.94
+0	Kaal Soulreaper	Warlock Trainer	68	1776	46	-61.4	0.89
+0	Angela Curthas	Warrior Trainer	68	1776	410	-57.1	1.59
+0	Luther Pickman	Warlock Trainer	68	1780	44	-61.4	1.33
+0	Christoph Walker	Warrior Trainer	68	1780	423	-57.1	3.94
+0	Father Lankester	Priest Trainer	68	1784	402	-57.1	5.41
+0	Kaelystia Hatebringer	Mage Trainer	68	1788	58	-61.4	3.93
+0	Pierce Shackleton	Mage Trainer	68	1791	53	-61.4	2.95
+0	Anastasia Hartwell	Mage Trainer	68	1814	56	-47.3	3.05
+0	Maximillion	Warlock Trainer	68	1839	1637	97	5.2
+0	Isabella	Mage Trainer	68	1847	1636	97	3.87
+0	Dark Cleric Duesten	Priest Trainer	68	1848	1628	97	3.33
+0	David Trias	Rogue Trainer	68	1860	1563	94.4	5.81
+0	Dannal Stern	Warrior Trainer	68	1862	1556	94.9	2.5
+0	Austil de Mon	Warrior Trainer	68	2255	238	33.7	0.51
+0	Cain Firesong	Mage Trainer	68	2257	233	41.2	1.06
+0	Rupert Boch	Warlock Trainer	68	2259	250	41.2	3.87
+0	Dark Cleric Beryl	Priest Trainer	68	2265	251	41.2	5.34
+0	Marion Call	Rogue Trainer	68	2271	243	41.2	2.2
+0	Garridel	Mage Trainer	1604	7329	-4720	28.5	6.23
+0	Ponaris	Priest Trainer	1604	7333	-4711	28.5	4.64
+0	Celoenus	Warlock Trainer	1604	7334	-4729	28.4	5.24
+0	Noellene	Paladin Trainer	1604	7383	-4738	18.8	6.14
+0	Hannovia	Hunter Trainer	1604	7396	-4731	18.8	3.86
+0	Tannaria	Rogue Trainer	1604	7401	-4743	26.2	3.82
+0	Harene Plainwalker	Druid Trainer	1604	7573	-5128	16.6	0.6
+0	Zelanis	Rogue Trainer	1604	7600	-5233	24.4	1.59
+0	Nerisen	Rogue Trainer	1604	7613	-5231	24.4	1.55
+0	Elara	Rogue Trainer	1604	7621	-5238	24.4	0.98
+0	Talionia	Warlock Trainer	1604	7640	-5169	14.8	0.82
+0	Alamma	Warlock Trainer	1604	7642	-5153	14.8	5.43
+0	Zanien	Warlock Trainer	1604	7655	-5152	14.8	4.17
+0	Osselan	Paladin Trainer	1604	7713	-5372	19.7	4.97
+0	Champion Bachi	Paladin Trainer	1604	7718	-5384	19.8	1.57
+0	Ithelis	Paladin Trainer	1604	7722	-5372	19.8	4.61
+0	Belestra	Priest Trainer	1604	7792	-4922	47.8	6
+0	Zandine	Hunter Trainer	1604	7794	-5292	13.5	0.75
+0	Lotheolan	Priest Trainer	1604	7804	-4938	47.8	1.48
+0	Aldrae	Priest Trainer	1604	7805	-4911	47.8	1.76
+0	Oninath	Hunter Trainer	1604	7810	-5290	12.5	2.88
+0	Tana	Hunter Trainer	1604	7810	-5265	12.5	3.75
+0	Inethven	Mage Trainer	1604	7861	-4984	47.8	1.26
+0	Zaedana	Mage Trainer	1604	7868	-4960	47.8	4.47
+0	Quithas	Mage Trainer	1604	7877	-4976	47.8	2.95
+0	Julia Sunstriker	Mage Trainer	1604	8204	-4286	38.6	6.11
+0	Summoner Teli'Larien	Warlock Trainer	1604	8204	-4272	38.6	5.99
+0	Jesthenis Sunstriker	Paladin Trainer	1604	8233	-4298	38.6	0.73
+0	Matron Arena	Priest Trainer	1604	8239	-4296	38.6	3.33
+0	Ranger Sallina	Hunter Trainer	1604	8251	-4277	38.6	3.19
+0	Pathstalker Kariel	Rogue Trainer	1604	8251	-4272	38.6	3.42
+1	Jannos Lighthoof	Druid Trainer	104	-4326	161	34.2	3.7
+1	Horace Alder	Mage Trainer	894	-3739	-4442	56.4	0.42
+1	Captain Evencane	Warrior Trainer	894	-3728	-4538	25.9	6
+1	Brother Karman	Paladin Trainer	150	-3693	-4513	11.8	0.94
+1	Harutt Thunderhorn	Warrior Trainer	104	-2880	-213	54.9	4.64
+1	Gart Mistrunner	Druid Trainer	104	-2874	-269	54.1	2.69
+1	Meela Dawnstrider	Shaman Trainer	104	-2874	-265	54	3.7
+1	Lanka Farshot	Hunter Trainer	104	-2865	-226	55	3.11
+1	Krang Stonehoof	Warrior Trainer	104	-2348	-496	-9	4.79
+1	Gennia Runetotem	Druid Trainer	104	-2316	-443	-5.4	6.07
+1	Narm Skychaser	Shaman Trainer	104	-2299	-438	-5.4	3.89
+1	Yaw Sharpmane	Hunter Trainer	104	-2180	-409	-4.5	1.05
+1	Holt Thunderhorn	Hunter Trainer	104	-1475	-81	161.2	5.76
+1	Sark Ragetotem	Warrior Trainer	104	-1473	-78	161.2	5.76
+1	Kary Thunderhorn	Hunter Trainer	104	-1465	-94	159.1	0.47
+1	Torm Ragetotem	Warrior Trainer	104	-1458	-81	159.1	4.96
+1	Urek Thunderhorn	Hunter Trainer	104	-1454	-100	159.1	1.48
+1	Ker Ragetotem	Warrior Trainer	104	-1445	-84	159.1	4.1
+1	Kym Wildmane	Druid Trainer	104	-1057	-289	159.1	0
+1	Turak Runetotem	Druid Trainer	104	-1039	-282	159.1	3.23
+1	Sheal Runetotem	Druid Trainer	104	-1038	-289	159.1	3.33
+1	Malakai Cross	Priest Trainer	68	-1007	260	112.1	5.79
+1	Siln Skychaser	Shaman Trainer	104	-997	278	138.1	0.28
+1	Thurston Xane	Mage Trainer	68	-996	254	101.8	0.66
+1	Father Cobb	Priest Trainer	68	-994	249	102.3	1.27
+1	Tigor Skychaser	Shaman Trainer	104	-981	270	138.1	2.2
+1	Beram Skychaser	Shaman Trainer	104	-981	287	138.1	4.43
+1	Miles Welsh	Priest Trainer	68	-956	252	97.9	4.22
+1	Archmage Shymm	Mage Trainer	68	-951	279	111	3
+1	Ursyn Ghull	Mage Trainer	68	-949	248	97.2	3.61
+1	Un'Thuwa	Mage Trainer	126	-839	-4940	21.1	1.97
+1	Babagaya Shadowcleft	Warlock Trainer	35	-783	-3705	40.2	3.56
+1	Frang	Warrior Trainer	29	-639	-4230	38.6	5.72
+1	Jen'shan	Hunter Trainer	126	-635	-4228	38.4	5.1
+1	Mai'ah	Mage Trainer	126	-625	-4210	38.3	0.8
+1	Shikrik	Shaman Trainer	29	-624	-4204	38.4	5.48
+1	Ken'jai	Priest Trainer	126	-617	-4202	38.3	4.87
+1	Nartok	Warlock Trainer	29	-607	-4112	43	0.24
+1	Rwag	Rogue Trainer	29	-589	-4145	41.1	3.63
+1	Kaplak	Rogue Trainer	29	268	-4711	17.6	3.87
+1	Thotar	Hunter Trainer	29	275	-4704	11.7	4.63
+1	Tai'jin	Priest Trainer	126	295	-4831	10.6	0.65
+1	Swart	Shaman Trainer	29	307	-4840	10.6	1.27
+1	Tarshaw Jaggedscar	Warrior Trainer	29	311	-4828	9.7	1.62
+1	Dhugru Gorelust	Warlock Trainer	29	356	-4838	11.2	2.04
+1	Ur'kyo	Priest Trainer	29	1452	-4180	44.4	6.06
+1	X'yera	Priest Trainer	29	1453	-4186	61.7	1.33
+1	Uthel'nay	Mage Trainer	126	1467	-4230	43.3	1.19
+1	Deino	Mage Trainer	29	1468	-4220	43.3	5.95
+1	Enyo	Mage Trainer	29	1472	-4225	43.3	2.06
+1	Pephredo	Mage Trainer	29	1474	-4219	43.3	3.73
+1	Ormok	Rogue Trainer	29	1763	-4296	7.8	5.41
+1	Shenthul	Rogue Trainer	126	1771	-4284	8.1	5.76
+1	Gest	Rogue Trainer	29	1792	-4279	7.6	4.75
+1	Mirket	Warlock Trainer	29	1835	-4363	-14.5	2.09
+1	Grol'dar	Warlock Trainer	29	1844	-4354	-14.6	3.32
+1	Zevrost	Warlock Trainer	29	1849	-4360	-14.6	0.86
+1	Sian'tsu	Shaman Trainer	29	1933	-4211	42.4	6.25
+1	Kardris Dreamseeker	Shaman Trainer	29	1934	-4225	42.4	0.05
+1	Sagorne Creststrider	Shaman Trainer	104	1938	-4223	42.4	3.79
+1	Master Pyreanor	Paladin Trainer	1695	1940	-4136	41.2	3.12
+1	Sorek	Warrior Trainer	29	1971	-4808	57.1	0.84
+1	Grezz Ragefist	Warrior Trainer	29	1980	-4800	56.1	1.01
+1	Zel'mak	Warrior Trainer	29	1998	-4808	57.1	2.44
+1	Danlaar Nightstride	Hunter Trainer	80	2061	-1191	101.1	3.11
+1	Xor'juul	Hunter Trainer	29	2085	-4624	58.9	0.16
+1	Ormak Grimshot	Hunter Trainer	29	2101	-4607	59	4.52
+1	Sian'dur	Hunter Trainer	29	2107	-4634	59	2.11
+1	Alenndaar Lapidaar	Hunter Trainer	1076	2373	661	153.3	4.9
+1	Shalannius	Druid Trainer	1638	5325	6638	9.5	0.02
+1	Killac	Hunter Trainer	1638	5367	6577	-126	4.33
+1	Vord	Hunter Trainer	1638	5368	6564	-126.1	0.87
+1	Deremiis	Hunter Trainer	1638	5378	6569	-125.9	3.05
+1	Baatun	Paladin Trainer	1638	5393	6655	-131.6	0.09
+1	Acteon	Hunter Trainer	1638	5396	5607	45.5	4.9
+1	Kazi	Warrior Trainer	1638	5396	6465	-98.8	1.15
+1	Ahonan	Warrior Trainer	1638	5401	6485	-99.7	5.81
+1	Jol	Paladin Trainer	1638	5408	6662	-130.8	4.64
+1	Behomat	Warrior Trainer	1638	5411	6480	-99.6	2.67
+1	Kavaan	Paladin Trainer	1638	5412	6648	-130.8	1.64
+1	Ruada	Warrior Trainer	1638	5435	5597	44.9	1.69
+1	Tuluun	Shaman Trainer	1638	5438	5677	44.3	4.14
+1	Semid	Mage Trainer	1638	5450	5603	45.2	2.62
+1	Keilnei	Hunter Trainer	1638	5457	4381	74.6	6.18
+1	Tullas	Paladin Trainer	1638	5461	5665	44.7	6
+1	Kore	Warrior Trainer	1638	5464	4394	74.6	5.6
+1	Guvan	Priest Trainer	1638	5468	5655	44.7	1.52
+1	Firmanvaar	Shaman Trainer	1638	5473	4406	74.8	4.73
+1	Zalduun	Priest Trainer	1638	5479	4371	73.6	0.51
+1	Valaatu	Mage Trainer	1638	5483	4394	74.7	4.92
+1	Aurelon	Paladin Trainer	1638	5497	4389	74.7	3.75
+1	Bati	Mage Trainer	1638	5543	6577	-138.5	0.26
+1	Harnan	Mage Trainer	1638	5546	6573	-138.5	1.56
+1	Edirah	Mage Trainer	1638	5551	6568	-138.4	0.4
+1	Fallat	Priest Trainer	1638	5628	6654	-135.2	5.48
+1	Izmir	Priest Trainer	1638	5631	6650	-135.2	2.53
+1	Caedmos	Priest Trainer	1638	5632	6660	-135.1	4.1
+1	Gurrag	Shaman Trainer	1638	5711	6810	-126.3	1.87
+1	Farseer Nobundo	Shaman Trainer	1638	5796	6736	-104.3	6.01
+1	Sulaa	Shaman Trainer	1638	5822	6726	-137.9	1.06
+1	Hobahken	Shaman Trainer	1638	5934	6697	-118.1	3.16
+1	Golhine the Hooded	Druid Trainer	80	6193	-1919	569.6	5.85
+1	Kaerbrus	Hunter Trainer	80	6229	-1917	563.1	0.26
+1	Loganaar	Druid Trainer	994	7867	-2594	486.9	0.68
+1	Lariia	Priest Trainer	80	9612	2511	1331.6	0.79
+1	Jandria	Priest Trainer	80	9654	2537	1331.6	3.93
+1	Emissary Valustraa	Mage Trainer	1638	9664	2529	1360.1	5.65
+1	Priestess Alathea	Priest Trainer	1076	9665	2520	1360.1	0.37
+1	Rukua	Paladin Trainer	1694	9665	2530	1360.1	5.71
+1	Astarii Starseeker	Priest Trainer	80	9667	2533	1360.1	5.79
+1	Kal	Druid Trainer	80	9742	966	1293.8	5.36
+1	Jannok Breezesong	Rogue Trainer	80	9790	944	1308.9	1.01
+1	Dazalar	Hunter Trainer	80	9812	929	1308.2	4.17
+1	Kyra Windblade	Warrior Trainer	80	9822	952	1308.9	1.13
+1	Laurna Morninglight	Priest Trainer	80	9905	985	1313.9	2.44
+1	Sildanair	Warrior Trainer	80	9940	2285	1341.5	4.99
+1	Darnath Bladesinger	Warrior Trainer	80	9989	2315	1330.9	1.87
+1	Arias'ta Bladesinger	Warrior Trainer	80	9992	2317	1330.9	2.16
+1	Erion Shadewhisper	Rogue Trainer	80	10055	2573	1282.6	5.64
+1	Syurna	Rogue Trainer	80	10084	2547	1295.1	1.22
+1	Anishar	Rogue Trainer	80	10091	2537	1285.8	3.26
+1	Jocaste	Hunter Trainer	80	10178	2511	1343.2	2.43
+1	Mathrengyl Bearwalker	Druid Trainer	80	10179	2564	1340.1	1.22
+1	Fylerian Nightwing	Druid Trainer	80	10179	2584	1326.1	4.36
+1	Denatharion	Druid Trainer	80	10186	2570	1326.1	3.65
+1	Dorion	Hunter Trainer	80	10187	2492	1358.6	2.43
+1	Jeen'ra Nightrunner	Hunter Trainer	80	10200	2518	1368.9	3.21
+1	Ayanna Everstride	Hunter Trainer	80	10458	828	1381	2.11
+1	Shanda	Priest Trainer	80	10459	802	1346.8	3.75
+1	Mardant Strongoak	Druid Trainer	80	10464	830	1381	2.9
+1	Frahun Shadewhisper	Rogue Trainer	80	10519	778	1329.7	1.54
+1	Alyissia	Warrior Trainer	80	10527	778	1329.7	2.48
+571	Warcaster Fanoraithe	Mage Trainer	2007	5803	596	652.8	5.04
+571	Jessa Weaver	Mage Trainer	2007	5811	596	652.8	4.59

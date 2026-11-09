@@ -788,7 +788,7 @@ public:
     int32 ModSpellDuration(SpellInfo const* spellProto, Unit const* target, int32 duration, bool positive, uint32 effectMask) const;
     void ModSpellCastTime(SpellInfo const* spellProto, int32& castTime, Spell* spell = nullptr) const;
 
-    [[nodiscard]] virtual SpellMissInfo MeleeSpellHitResult(Unit* /*victim*/, SpellInfo const* /*spellInfo*/) { return SPELL_MISS_NONE; }
+    [[nodiscard]] virtual SpellMissInfo MeleeSpellHitResult(Unit* /*victim*/, SpellInfo const* /*spellInfo*/, WeaponAttackType /*scriptedAttackType*/ = MAX_ATTACK) { return SPELL_MISS_NONE; }
     SpellMissInfo MagicSpellHitResult(Unit* victim, SpellInfo const* spellInfo);
     SpellMissInfo SpellHitResult(Unit* victim, SpellInfo const* spellInfo, bool canReflect = false);
     SpellMissInfo SpellHitResult(Unit* victim, Spell const* spell, bool canReflect = false);

@@ -236,6 +236,7 @@ void AuraApplication::ClientUpdate(bool remove)
                 if (plr->NeedSendSpectatorData() && ArenaSpectator::ShouldSendAura(aura, GetEffectMask(), GetTarget()->GetGUID(), remove))
                     ArenaSpectator::SendCommand_Aura(plr->FindMap(), plr->GetGUID(), "AUR", aura->GetCasterGUID(), aura->GetSpellInfo()->Id, aura->GetSpellInfo()->IsPositive(), aura->GetSpellInfo()->Dispel, aura->GetDuration(), aura->GetMaxDuration(), (aura->GetCharges() > 1 ? aura->GetCharges() : aura->GetStackAmount()), remove);
 
+    sScriptMgr->OnSendAuraUpdate(_target, nullptr, this, remove);
     _target->SendMessageToSet(&data, true);
 }
 
@@ -1056,15 +1057,16 @@ void Aura::SetStackAmount(uint8 stackAmount)
 bool Aura::ModStackAmount(int32 num, AuraRemoveMode removeMode, bool periodicReset /*= false*/)
 {
     int32 stackAmount = m_stackAmount + num;
+    uint8 const maxAuraStacks = m_spellInfo->CalcMaxAuraStacks(GetCaster());
 
     // limit the stack amount (only on stack increase, stack amount may be changed manually)
-    if ((num > 0) && (stackAmount > int32(m_spellInfo->StackAmount)))
+    if ((num > 0) && (stackAmount > int32(maxAuraStacks)))
     {
         // not stackable aura - set stack amount to 1
-        if (!m_spellInfo->StackAmount)
+        if (!maxAuraStacks)
             stackAmount = 1;
         else
-            stackAmount = m_spellInfo->StackAmount;
+            stackAmount = maxAuraStacks;
     }
     // we're out of stacks, remove
     else if (stackAmount <= 0)
@@ -1073,7 +1075,7 @@ bool Aura::ModStackAmount(int32 num, AuraRemoveMode removeMode, bool periodicRes
         return true;
     }
 
-    bool refresh = stackAmount >= GetStackAmount() && (m_spellInfo->StackAmount || !m_spellInfo->HasAttribute(SPELL_ATTR1_AURA_UNIQUE));
+    bool refresh = stackAmount >= GetStackAmount() && (maxAuraStacks || !m_spellInfo->HasAttribute(SPELL_ATTR1_AURA_UNIQUE));
 
     // Update stack amount
     if (refresh)
@@ -2957,6 +2959,26 @@ void UnitAura::FillTargetMap(std::map<Unit*, uint8>& targets, Unit* caster)
                             if (Unit* owner = GetUnitOwner()->GetCharmerOrOwner())
                                 if (GetUnitOwner()->IsWithinDistInMap(owner, radius))
                                     targetList.push_back(owner);
+                            break;
+                        }
+                    case SPELL_EFFECT_ASCENSION_APPLY_AURA_TO_SUMMONS:
+                        {
+                            Unit* owner = GetUnitOwner();
+                            for (Unit* controlled : owner->m_Controlled)
+                            {
+                                if (!controlled || !controlled->IsSummon() || controlled->GetOwnerGUID() != owner->GetGUID())
+                                    continue;
+
+                                if (!owner->IsInMap(controlled))
+                                    continue;
+
+                                // Several pet-scaling rows intentionally have no radius. A nonzero
+                                // DBC radius remains authoritative for range-limited summon auras.
+                                if (radius > 0.0f && !owner->IsWithinDistInMap(controlled, radius))
+                                    continue;
+
+                                targetList.push_back(controlled);
+                            }
                             break;
                         }
                 }

@@ -3507,6 +3507,12 @@ void WorldObject::ModSpellCastTime(SpellInfo const* spellInfo, int32& castTime, 
     if (!spellInfo || castTime < 0)
         return;
 
+    if (Unit const* channelCaster = ToUnit(); channelCaster && channelCaster->CanCastDuringChannel(spellInfo))
+    {
+        castTime = 0;
+        return;
+    }
+
     if (spellInfo->IsChanneled() && spellInfo->HasAura(SPELL_AURA_MOUNTED))
         return;
 
@@ -3809,7 +3815,7 @@ SpellMissInfo WorldObject::SpellHitResult(Unit* victim, Spell const* spell, bool
     {
         case SPELL_DAMAGE_CLASS_RANGED:
         case SPELL_DAMAGE_CLASS_MELEE:
-            return MeleeSpellHitResult(victim, spellInfo);
+            return MeleeSpellHitResult(victim, spellInfo, spell->GetScriptMeleeAttackType());
         case SPELL_DAMAGE_CLASS_NONE:
         {
             if (spellInfo->SpellFamilyName)
