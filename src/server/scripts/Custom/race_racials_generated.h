@@ -185,6 +185,8 @@ namespace RaceRacials
     {
         static std::vector<RaceGrant> const grants =
         {
+            { 112, { 14001121, 14001122, 14001123, 14001124 } }, // Hozen: four passive racials (Nimble Escape 14001125 deferred to a later release).
+            { 110, { 14001141, 14001142, 14001143, 14001144 } }, // Sylvari: four passive racials (Verdant Renewal 14001145 deferred).
             { 28, { SPELL_FELBLOOD_SURGE, SPELL_MANARI_BLOOD, SPELL_DEMONIC_RESILIENCE, SPELL_UNBROKEN_WILL, SPELL_FORBIDDEN_KNOWLEDGE } },  // upstream race 16
             { 26, { SPELL_ARCANE_PULSE, SPELL_MAGICAL_AFFINITY, SPELL_ARCANE_RESISTANCE, SPELL_ANCIENT_HISTORY, SPELL_CANTRIPS } },  // upstream race 17
             { 19, { SPELL_QUAKING_PALM, SPELL_EPICUREAN, SPELL_GOURMAND, SPELL_BOUNCY, SPELL_INNER_PEACE } },  // upstream race 18

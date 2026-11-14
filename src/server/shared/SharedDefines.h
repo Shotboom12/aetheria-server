@@ -28,6 +28,8 @@ constexpr uint32 GetRaceMaskForRace(unsigned race)
 {
     switch (race)
     {
+        case 86: case 110: race = 4; break; // Alliance policy placeholder; verify donor eligibility.
+        case 112: race = 2; break; // Hozen Horde.
         case 75: case 77: race = 1; break;
         case 74: case 76: case 78: race = 2; break;
         case 60: race = 11; break;
@@ -167,6 +169,8 @@ constexpr uint8 GetLegacyMaskRaceForRace(uint32 race)
 {
     switch (race)
     {
+        case 86: case 110: return RACE_NIGHTELF; // Must match GetRaceMaskForRace.
+        case 112: return RACE_ORC;
         case 75: case 77: return RACE_HUMAN;
         case 74: case 76: case 78: return RACE_ORC;
         case 60: return RACE_DRAENEI;

@@ -1340,6 +1340,8 @@ enum Opcodes : uint16
     SMSG_MULTIPLE_MOVES                             = 0x51E, // uncompressed version of SMSG_COMPRESSED_MOVES
     TC9_CMSG_PREPARE_FOR_REDIRECT                   = 0x51F,
     TC9_SMSG_READY_FOR_REDIRECT                     = 0x520,
+    CMSG_ESTERIA_INVENTORY                          = 0x521,
+    SMSG_ESTERIA_INVENTORY                          = 0x522,
     SMSG_ESTERIA_BODY_SHAPE                         = 0x523,
     SMSG_ESTERIA_RETAIL_LOOK                        = 0x524,
     CMSG_ESTERIA_FORM_LOOK                          = 0x525,
@@ -1355,7 +1357,20 @@ enum Opcodes : uint16
     SMSG_ESTERIA_SPELL_CHARGES_SET                  = 0x534,
     SMSG_ESTERIA_AURA_AMOUNT                        = 0x535,
     SMSG_ESTERIA_SPELL_VISUAL_OVERRIDE              = 0x536,
-    NUM_MSG_TYPES                                   = 0x537
+    CMSG_ESTERIA_HOUSING_HELLO                      = 0x537,
+    SMSG_ESTERIA_HOUSING_HELLO                      = 0x538,
+    CMSG_ESTERIA_HOUSING_CATALOG                    = 0x539,
+    SMSG_ESTERIA_HOUSING_CATALOG                    = 0x53A,
+    CMSG_ESTERIA_HOUSING_EDIT                       = 0x53B,
+    SMSG_ESTERIA_HOUSING_EDIT_ACK                   = 0x53C,
+    CMSG_ESTERIA_HOUSING_ENTER                      = 0x53D,
+    SMSG_ESTERIA_HOUSING_STATE                      = 0x53E,
+    CMSG_ESTERIA_HOUSING_ACTION                     = 0x53F,
+    SMSG_ESTERIA_HOUSING_PLOT                       = 0x540,
+    SMSG_ESTERIA_HOUSING_LAYOUT                     = 0x541,
+    SMSG_ESTERIA_HOUSING_NEIGHBORHOOD               = 0x542,
+    SMSG_ESTERIA_HOUSING_COMMERCE                   = 0x543,
+    NUM_MSG_TYPES                                   = 0x544
 };
 
 enum OpcodeMisc : uint16

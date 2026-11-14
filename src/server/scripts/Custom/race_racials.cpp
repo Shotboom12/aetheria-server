@@ -179,6 +179,18 @@ namespace
                 player->removeSpell(spellId, SPEC_MASK_ALL, false);
     }
 
+    // These IDs belong to the Hozen racial set; use the character's original team,
+    // not a temporary battleground or charm faction.
+    bool IsHozenRacial(uint32 spellId)
+    {
+        return spellId >= 14001121 && spellId <= 14001125;
+    }
+
+    bool CanOwnHozenRacial(Player const* player)
+    {
+        return player && player->getRace(true) == 112 && player->GetTeamId(true) == TEAM_HORDE;
+    }
+
     void LearnRacials(Player* player)
     {
         for (RaceGrant const& grant : Grants())
@@ -195,6 +207,13 @@ namespace
 
             for (uint32 spellId : grant.spells)
             {
+                if (IsHozenRacial(spellId) && !CanOwnHozenRacial(player))
+                {
+                    if (player->HasSpell(spellId))
+                        player->removeSpell(spellId, SPEC_MASK_ALL, false);
+                    continue;
+                }
+
                 if (skipped.count(spellId))
                 {
                     if (player->HasSpell(spellId))
@@ -1366,10 +1385,28 @@ class race_racials_player : public PlayerScript
 public:
     race_racials_player() : PlayerScript("race_racials_player", {
         PLAYERHOOK_ON_LOGIN, PLAYERHOOK_ON_PLAYER_JUST_DIED, PLAYERHOOK_ON_GIVE_EXP,
-        PLAYERHOOK_ON_BEFORE_LOOT_MONEY, PLAYERHOOK_ON_BEFORE_UPDATE, PLAYERHOOK_ON_GOSSIP_SELECT, PLAYERHOOK_ON_LOOT_ITEM }) { }
+        PLAYERHOOK_ON_BEFORE_LOOT_MONEY, PLAYERHOOK_ON_BEFORE_UPDATE, PLAYERHOOK_ON_GOSSIP_SELECT, PLAYERHOOK_ON_LOOT_ITEM,
+        PLAYERHOOK_CAN_LEARN_SPELL }) { }
+
+    bool OnPlayerCanLearnSpell(Player* player, uint32 spellId) override
+    {
+        return !IsHozenRacial(spellId) || CanOwnHozenRacial(player);
+    }
 
     void OnPlayerLogin(Player* player) override
     {
+        // Repair stale ownership after an offline race/faction change before any
+        // custom-race early return. The original team ignores temporary BG teams.
+        if (!CanOwnHozenRacial(player))
+        {
+            for (uint32 spellId = 14001121; spellId <= 14001125; ++spellId)
+            {
+                player->RemoveAurasDueToSpell(spellId);
+                if (player->HasSpell(spellId))
+                    player->removeSpell(spellId, SPEC_MASK_ALL, false);
+            }
+        }
+
         if (!OwnsRacials(player))
             return;
 

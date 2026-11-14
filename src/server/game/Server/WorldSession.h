@@ -725,9 +725,13 @@ public:                                                 // opcodes handlers
     void Handle_Deprecated(WorldPacket& recvPacket);    // never used anymore by client
 
     void HandleCharEnumOpcode(WorldPacket& recvPacket);
+    void HandleEsteriaInventoryOpcode(WorldPacket& recvData);
     void HandleEsteriaFormLookOpcode(WorldPacket& recvData);
     void HandleEsteriaSwapRequestOpcode(WorldPacket& recvData);
     void HandleEsteriaSwapRosterRequestOpcode(WorldPacket& recvData);
+    // True while the player stands at a banker; DigitalInventory bank access uses it.
+    bool IsAtBanker() const { return CanUseBank(); }
+    void HandleEsteriaHousingOpcode(WorldPacket& recvData); // forwards to mod-esteria-housing (EsteriaHousingHooks.h)
     void HandleCharDeleteOpcode(WorldPacket& recvPacket);
     void HandleCharCreateOpcode(WorldPacket& recvPacket);
     void HandlePlayerLoginOpcode(WorldPacket& recvPacket);

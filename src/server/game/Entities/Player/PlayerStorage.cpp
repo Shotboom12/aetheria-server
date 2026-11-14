@@ -332,7 +332,7 @@ InventoryResult Player::CanUnequipItems(uint32 item, uint32 count) const
 
 uint32 Player::GetItemCount(uint32 item, bool inBankAlso, Item* skipItem) const
 {
-    uint32 count = 0;
+    uint32 count = _digitalInventory.Count(item, skipItem);
     for (uint8 i = EQUIPMENT_SLOT_START; i < INVENTORY_SLOT_ITEM_END; i++)
         if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
             if (pItem != skipItem &&  pItem->GetEntry() == item)
@@ -377,7 +377,7 @@ uint32 Player::GetItemCount(uint32 item, bool inBankAlso, Item* skipItem) const
 
 uint32 Player::GetItemCountWithLimitCategory(uint32 limitCategory, Item* skipItem) const
 {
-    uint32 count = 0;
+    uint32 count = _digitalInventory.CountLimit(limitCategory, skipItem);
     for (int i = EQUIPMENT_SLOT_START; i < INVENTORY_SLOT_ITEM_END; ++i)
         if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
             if (pItem != skipItem)
@@ -660,7 +660,9 @@ bool Player::IsValidPos(uint8 bag, uint8 slot, bool explicit_pos)
 
 bool Player::HasItemCount(uint32 item, uint32 count, bool inBankAlso) const
 {
-    uint32 tempcount = 0;
+    uint32 tempcount = _digitalInventory.Count(item);
+    if (tempcount >= count)
+        return true;
     for (uint8 i = EQUIPMENT_SLOT_START; i < INVENTORY_SLOT_ITEM_END; i++)
     {
         Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i);
@@ -861,6 +863,8 @@ InventoryResult Player::CanTakeMoreSimilarItems(uint32 entry, uint32 count, Item
 
 bool Player::HasItemTotemCategory(uint32 TotemCategory) const
 {
+    if (_digitalInventory.HasTool(TotemCategory))
+        return true;
     Item* pItem;
     for (uint8 i = EQUIPMENT_SLOT_START; i < INVENTORY_SLOT_ITEM_END; ++i)
     {
@@ -2687,6 +2691,7 @@ Item* Player::StoreNewItem(ItemPosCountVec const& dest, uint32 item, bool update
         }
 
         sScriptMgr->OnPlayerStoreNewItem(this, pItem, count);
+        _digitalInventory.ScheduleDeposit();
     }
     return pItem;
 }
@@ -3229,7 +3234,9 @@ void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
 void Player::DestroyItemCount(uint32 itemEntry, uint32 count, bool update, bool unequip_check)
 {
     LOG_DEBUG("entities.player.items", "STORAGE: DestroyItemCount item = {}, count = {}", itemEntry, count);
-    uint32 remcount = 0;
+    uint32 remcount = _digitalInventory.Consume(itemEntry, count);
+    if (remcount >= count)
+        return;
 
     // in inventory
     for (uint8 i = INVENTORY_SLOT_ITEM_START; i < INVENTORY_SLOT_ITEM_END; ++i)
@@ -5676,6 +5683,10 @@ bool Player::LoadFromDB(ObjectGuid playerGuid, CharacterDatabaseQueryHolder cons
     // xinef: load mails before inventory, so problematic items can be added to already loaded mails
     _LoadMail(holder.GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_MAILS), holder.GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_MAIL_ITEMS));
 
+    _digitalInventory.Load(holder.GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_DIGITAL_STORAGE),
+        holder.GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_DIGITAL_ITEMS));
+    if (_digitalInventory.Failed())
+        return false;
     _LoadInventory(holder.GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_INVENTORY), time_diff);
 
     // update items with duration and realtime
@@ -7342,6 +7353,8 @@ void Player::SaveToDB(bool create, bool logout)
 
 void Player::SaveToDB(CharacterDatabaseTransaction trans, bool create, bool logout)
 {
+    if (_digitalInventory.Failed())
+        return;
     // delay auto save at any saves (manual, in code, or autosave)
     m_nextSave = sWorld->getIntConfig(CONFIG_INTERVAL_SAVE);
 
@@ -7442,6 +7455,8 @@ void Player::SaveInventoryAndGoldToDB(CharacterDatabaseTransaction trans)
 
 void Player::SaveGoldToDB(CharacterDatabaseTransaction trans)
 {
+    if (_digitalInventory.Failed())
+        return;
     CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UDP_CHAR_MONEY);
     stmt->SetData(0, GetMoney());
     stmt->SetData(1, GetGUID().GetRawValue());
@@ -7558,6 +7573,10 @@ void Player::_SaveAuras(CharacterDatabaseTransaction trans, bool logout)
 
 void Player::_SaveInventory(CharacterDatabaseTransaction trans)
 {
+    if (_digitalInventory.Failed())
+        return;
+    _digitalInventory.Save(trans);
+    _digitalBank.Save(trans);
     CharacterDatabasePreparedStatement* stmt = nullptr;
     // force items in buyback slots to new state
     // and remove those that aren't already

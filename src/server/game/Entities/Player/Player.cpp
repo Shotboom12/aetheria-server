@@ -3314,6 +3314,15 @@ bool Player::CheckSkillLearnedBySpell(uint32 spellId)
 bool Player::_addSpell(uint32 spellId, uint8 addSpecMask, bool temporary, bool learnFromSkill /*= false*/,
     bool sendPacket /*= true*/)
 {
+    // Restrict Hozen racial ownership even when a caller bypasses learnSpell().
+    // Saved spells are loaded first; the login reconciliation removes stale ones.
+    constexpr uint32 HozenRacialFirst = 14001121;
+    constexpr uint32 HozenRacialLast = 14001125;
+    constexpr uint8 HozenRace = 112;
+    if (!isBeingLoaded() && spellId >= HozenRacialFirst && spellId <= HozenRacialLast &&
+        (getRace(true) != HozenRace || GetTeamId(true) != TEAM_HORDE))
+        return false;
+
     // pussywizard: this can be called to OVERWRITE currently existing spell params! usually to set active = false for lower ranks of a spell
 
     SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
@@ -4516,6 +4525,13 @@ void Player::DeleteFromDB(ObjectGuid::LowType lowGuid, uint32 accountId, bool up
                 trans->Append(stmt);
 
                 stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_INVENTORY);
+                stmt->SetData(0, lowGuid);
+                trans->Append(stmt);
+
+                stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_DIGITAL_ITEMS_OWNER);
+                stmt->SetData(0, lowGuid);
+                trans->Append(stmt);
+                stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_DIGITAL_STORAGE_OWNER);
                 stmt->SetData(0, lowGuid);
                 trans->Append(stmt);
 
